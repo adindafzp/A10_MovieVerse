@@ -15,9 +15,8 @@ exports.authMiddleware = (req, res, next) => {
       return res.status(401).json({ message: "Invalid token" });
     }
 
-    // Lampirkan informasi pengguna ke request object
     req.userId = decoded.userId;
-    req.userRole = decoded.role; // Tambahkan role ke request object
-    next(); // Lanjutkan ke middleware berikutnya atau route handler
+    req.userRole = decoded.role;
+    next();
   });
 };

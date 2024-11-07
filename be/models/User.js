@@ -39,6 +39,10 @@ User.init(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
+    isSuspended: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
     verificationToken: {
       type: DataTypes.STRING,
       allowNull: true,
