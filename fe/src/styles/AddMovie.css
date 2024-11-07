@@ -1,0 +1,86 @@
+* {
+    font-family: "Poppins", sans-serif;
+}
+
+:root {
+    --primary-color: #f6f8fd;
+    --secondary-color: #dc3545;
+    --color-text: #231942;
+}
+
+.add-movie-page {
+    background-color: #000;
+    color: var(--primary-color);
+    min-height: 100vh;
+    padding-top: 80px;
+    padding-bottom: 30px;
+}
+
+.add-movie-title {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    border-bottom: 5px solid var(--secondary-color);
+    display: inline-block;
+    padding-bottom: 10px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.form-input {
+    background-color: #fff;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 5px;
+    transition: box-shadow 0.2s;
+}
+
+.form-input:focus {
+    outline: none;
+    box-shadow: 0 0 8px var(--secondary-color);
+}
+
+.form-checkbox {
+    color: var(--primary-color);
+}
+
+.submit-button {
+    background-color: var(--secondary-color);
+    color: #fff;
+    border: none;
+    padding: 8px 30px;
+    font-weight: bold;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.submit-button:hover {
+    background-color: #a83232;
+    transform: scale(1.05);
+}
+
+.poster-preview {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 5px;
+    margin-top: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Responsive untuk layar kecil */
+@media (max-width: 576px) {
+    .add-movie-title {
+        font-size: 1.5rem;
+    }
+    .form-input {
+        padding: 8px;
+    }
+    .submit-button {
+        padding: 6px 20px;
+        font-size: 1rem;
+    }
+}

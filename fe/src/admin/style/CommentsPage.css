@@ -1,0 +1,117 @@
+* {
+  font-family: "Poppins", sans-serif;
+}
+
+:root {
+  --primary-color: #f6f8fd;
+  --secondary-color: #dc3545;
+  --color-text: #231942;
+  --navbar-color: #ffffff;
+  --navbar-color-text: #000000;
+}
+
+.comments-page {
+  padding: 20px;
+  background-color: #f5f5f5;
+}
+
+.comments-filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+}
+
+.filter-item span {
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.comment-cell p {
+  margin: 0;
+}
+
+.custom-table .ant-table-thead > tr > th {
+  text-align: center;
+}
+
+.comments-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.ant-btn-primary {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.ant-btn-primary:hover {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.ant-btn-danger {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.ant-btn-danger:hover {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.comments-actions .ant-btn[disabled] {
+  background-color: var(--secondary-color);
+  color: white !important;
+  border-color: var(--secondary-color) !important;
+  opacity: 0.6;
+}
+
+.comments-actions .ant-btn-approve {
+  background-color: var(--secondary-color);
+  color: white;
+  border-color: var(--secondary-color);
+}
+
+.comments-actions .ant-btn-approve:hover,
+.comments-actions .ant-btn-approve:focus {
+  background-color: #c62636 !important;
+  color: white !important;
+  border-color: #c62636 !important;
+  box-shadow: none;
+}
+
+.comments-actions .ant-btn-delete {
+  background-color: var(--secondary-color);
+  color: white;
+  border-color: var(--secondary-color);
+}
+
+.comments-actions .ant-btn-delete:hover,
+.comments-actions .ant-btn-delete:focus {
+  background-color: #c62636 !important;
+  color: white !important;
+  border-color: #c62636 !important;
+  box-shadow: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .comments-filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .comments-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+}
