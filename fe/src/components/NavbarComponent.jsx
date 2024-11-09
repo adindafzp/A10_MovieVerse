@@ -1,11 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Navbar,
-  Container,
-  Nav,
-  NavDropdown,
-  Button,
-} from "react-bootstrap";
+import { Navbar, Container, Nav, NavDropdown, Button } from "react-bootstrap";
 import { NavLink, useNavigate } from "react-router-dom";
 import { navLinks } from "../data/dummyData";
 import "../styles/NavbarPage.css";
@@ -46,6 +40,11 @@ const NavbarComponent = () => {
     return () => window.removeEventListener("scroll", changeBackgroundColor);
   }, []);
 
+  // Fungsi navigasi ke halaman Add Movie
+  const handleAddMovie = () => {
+    navigate("/movies/add");
+  };
+
   return (
     <div>
       <Navbar expand="lg" className={changeColor ? "navbar-active" : ""}>
@@ -72,7 +71,6 @@ const NavbarComponent = () => {
           </Nav>
 
           <div className="d-flex align-items-center">
-
             {isAuth ? (
               <NavDropdown
                 title={<i className="fa fa-user-circle profile-icon"></i>}
@@ -80,6 +78,9 @@ const NavbarComponent = () => {
                 align="end"
                 className="profile-dropdown"
               >
+                <NavDropdown.Item onClick={handleAddMovie}>
+                  Add New Movie
+                </NavDropdown.Item>
                 <NavDropdown.Item onClick={handleLogout}>
                   Logout
                 </NavDropdown.Item>
