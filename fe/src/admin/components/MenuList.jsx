@@ -9,6 +9,7 @@ import {
   UserOutlined,
   CommentOutlined,
   LogoutOutlined,
+  TeamOutlined, // Icon untuk Director
 } from "@ant-design/icons";
 
 const MenuList = ({ darkTheme }) => {
@@ -29,14 +30,6 @@ const MenuList = ({ darkTheme }) => {
           <Link to="/cms/movies-input">Input New Movies</Link>
         </Menu.Item>
       </Menu.SubMenu>
-      <Menu.SubMenu key="series" icon={<VideoCameraOutlined />} title="Series">
-        <Menu.Item key="validateSeries">
-          <Link to="/cms/series-approved">Validate</Link>
-        </Menu.Item>
-        <Menu.Item key="InputNewseries">
-          <Link to="/cms/series-input">Input New Series</Link>
-        </Menu.Item>
-      </Menu.SubMenu>
       <Menu.Item key="countries" icon={<FlagOutlined />}>
         <Link to="/cms/countries">Countries</Link>
       </Menu.Item>
@@ -48,6 +41,9 @@ const MenuList = ({ darkTheme }) => {
       </Menu.Item>
       <Menu.Item key="celebs" icon={<UserOutlined />}>
         <Link to="/cms/celebs">Celebs</Link>
+      </Menu.Item>
+      <Menu.Item key="directors" icon={<TeamOutlined />}>
+        <Link to="/cms/directors">Directors</Link>
       </Menu.Item>
       <Menu.Item key="comments" icon={<CommentOutlined />}>
         <Link to="/cms/comments">Comments</Link>

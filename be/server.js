@@ -1,7 +1,7 @@
 const express = require("express");
 const sequelize = require("./library/database");
 const User = require("./models/User");
-const Review = require("./models/Review"); // Pastikan model Review terimport
+const Review = require("./models/Review");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const session = require("express-session");
@@ -34,7 +34,7 @@ const port = 3000;
 // CORS Configuration
 app.use(
   cors({
-    origin: "http://localhost:5173", // Sesuaikan dengan domain frontend
+    origin: "http://localhost:5173", // domain frontend
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true
   })
@@ -76,11 +76,12 @@ app.use("/api/admin/user", userRoutes);
 app.use("/api/admin/genre", genreRoutes);
 app.use("/api/admin/country", countryRoutes);
 app.use("/api/admin/award", awardRoutes);
-app.use("/api/admin/director", directorRoutes);
+app.use("/api/admin/directors", directorRoutes);
 app.use("/api/admin/movie", movieRoutes);
 app.use("/api/admin/movie-videos", movieVideosRoutes);
 app.use("/api/admin/actors", actorRoutes);
 app.use("/api/admin/movie-actors", movieActorRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 // Public Routes
 app.use("/api/movies", movieRoutesPublic);
@@ -88,9 +89,6 @@ app.use("/api/directors", directorRoutesPublic);
 app.use("/api/actors", actorRoutesPublic);
 app.use("/api/genres", genreRoutesPublic);
 app.use("/api/countries", countryRoutesPublic);
-
-// Review Routes
-app.use("/api/reviews", reviewRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

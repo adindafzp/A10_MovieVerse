@@ -1,5 +1,5 @@
-// controllers/ActorController.js
 const Actor = require("../models/Actor");
+const Country = require("../models/Country"); // Import model Country
 
 class ActorController {
   // Create a new actor
@@ -12,20 +12,24 @@ class ActorController {
     }
   }
 
-  // Get all actors
+  // Get all actors, including related country data
   static async getAll(req, res) {
     try {
-      const actors = await Actor.findAll();
+      const actors = await Actor.findAll({
+        include: { model: Country, as: "Country" }, // Menyertakan data negara
+      });
       return res.status(200).json(actors);
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
   }
 
-  // Get an actor by ID
+  // Get an actor by ID, including related country data
   static async getById(req, res) {
     try {
-      const actor = await Actor.findByPk(req.params.id);
+      const actor = await Actor.findByPk(req.params.id, {
+        include: { model: Country, as: "Country" }, // Menyertakan data negara
+      });
       if (!actor) {
         return res.status(404).json({ message: "Actor not found" });
       }
@@ -44,7 +48,9 @@ class ActorController {
       if (!updated) {
         return res.status(404).json({ message: "Actor not found" });
       }
-      const updatedActor = await Actor.findByPk(req.params.id);
+      const updatedActor = await Actor.findByPk(req.params.id, {
+        include: { model: Country, as: "Country" }, // Menyertakan data negara setelah update
+      });
       return res.status(200).json(updatedActor);
     } catch (error) {
       return res.status(500).json({ error: error.message });

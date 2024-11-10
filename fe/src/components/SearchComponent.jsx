@@ -97,7 +97,7 @@ const SearchResultPage = () => {
 
       const params = [];
 
-      console.log(query)
+      console.log(query);
 
       // Add the query parameter if it exists
       if (query) {
@@ -108,8 +108,7 @@ const SearchResultPage = () => {
         params.push(`category=${encodeURIComponent(activeCategory)}`);
       }
 
-      url += params.length > 0 ? params.join('&') : '';
-
+      url += params.length > 0 ? params.join("&") : "";
 
       // Tambahkan genre dan country hanya jika ada pilihan dan valid
       if (genre && !isNaN(genre)) url += `&genre=${genre}`;
@@ -134,6 +133,10 @@ const SearchResultPage = () => {
     }
   };
 
+  const handleTabClick = (category) => {
+    setActiveCategory(category);
+  };
+
   const handleSearch = debounce((query) => {
     setSearchQuery(query);
   }, 500);
@@ -143,12 +146,7 @@ const SearchResultPage = () => {
       filters.genre && !isNaN(filters.genre) ? filters.genre : null;
     const validCountry =
       filters.country && !isNaN(filters.country) ? filters.country : null;
-
-    console.log("Sending request with parameters:");
-    console.log("Genre ID:", validGenre);
-    console.log("Country ID:", validCountry);
-    console.log("Sort By:", sortBy); // Debug untuk sortBy
-
+      
     fetchMovies(
       searchQuery,
       validGenre,
@@ -198,7 +196,18 @@ const SearchResultPage = () => {
   };
 
   const handleClearFilters = () => {
-    window.location.reload()
+    setTempFilters({
+      genre: "",
+      releaseYear: "",
+      rating: "",
+      country: "",
+    });
+    setFilters({
+      genre: "",
+      releaseYear: "",
+      rating: "",
+      country: "",
+    });
   };
 
   const indexOfLastMovie = currentPage * moviesPerPage;
@@ -231,26 +240,24 @@ const SearchResultPage = () => {
 
   return (
     <div className="main-content">
-      <Container fluid className="search-result-page">
-        {/* Buttons for category selection */}
+      <Container className="search-result-page" style={{ maxWidth: "1200px", margin: "0 auto" }}>
         <Row className="mb-4">
           <Col className="d-flex justify-content-center">
             <Button
               variant={activeCategory === "movies" ? "danger" : "secondary"}
               className="me-2"
-              onClick={() => setActiveCategory("movies")}
+              onClick={() => handleTabClick("movies")}
             >
               MOVIE
             </Button>
             <Button
               variant={activeCategory === "celebs" ? "danger" : "secondary"}
-              onClick={() => setActiveCategory("celebs")}
+              onClick={() => handleTabClick("celebs")}
             >
               CELEBS
             </Button>
           </Col>
         </Row>
-
         {/* Search Field */}
         <Row className="mb-4">
           <Col md={12}>
@@ -266,7 +273,6 @@ const SearchResultPage = () => {
             </Form>
           </Col>
         </Row>
-
         <Row>
           {/* Sidebar for Filters */}
           <Col md={3} className="bg-dark p-3 rounded filter-sidebar">
@@ -333,13 +339,21 @@ const SearchResultPage = () => {
             </Form.Group>
             <Row>
               <Col>
-                <Button variant="outline-light" onClick={handleClearFilters}>
-                  Clear Filters
+                <Button
+                  variant="primary"
+                  className="filter-button submit-button"
+                  onClick={handleSubmit}
+                >
+                  Submit
                 </Button>
               </Col>
               <Col>
-                <Button variant="primary" onClick={handleSubmit}>
-                  Submit
+                <Button
+                  variant="outline-light"
+                  className="filter-button clear-button"
+                  onClick={handleClearFilters}
+                >
+                  Clear Filters
                 </Button>
               </Col>
             </Row>
@@ -354,7 +368,7 @@ const SearchResultPage = () => {
               <Col className="d-flex justify-content-end">
                 <DropdownButton
                   id="dropdown-basic-button"
-                  title={`Sort by: ${sortBy}`}
+                  title={`Sort by: ${sortBy || "Select"}`}
                   onSelect={handleSortBy}
                   variant="outline-secondary"
                   size="sm"
@@ -374,10 +388,10 @@ const SearchResultPage = () => {
 
             {/* Movies Display */}
             <div
-              className="movie-list"
+              className="movie-list-search"
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
+                gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
                 gap: "20px",
                 padding: "10px 0",
               }}

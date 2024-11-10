@@ -53,10 +53,11 @@ Movie.init(
       allowNull: false,
     },
     release_date: {
-      type: "TIMESTAMP",
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+      type: Sequelize.DATEONLY,
+      defaultValue: Sequelize.literal("CURRENT_DATE"),
       allowNull: false,
     },
+        
     is_popular: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,

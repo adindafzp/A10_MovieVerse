@@ -1,43 +1,71 @@
-import { useState } from 'react';
-import { Table, Button, Modal, Form, Input, Space } from 'antd';
+import { useState, useEffect } from 'react';
+import { Table, Button, Modal, Form, Input, Space, message } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import axios from 'axios'; // Tambahkan axios
-import "../style/GenresPage.css"; // CSS khusus untuk Genres
+import axios from 'axios';
+import "../style/GenresPage.css";
 
 const CMSGenres = () => {
-  const [genresData, setGenresData] = useState([
-    { key: '1', genre: 'Romance' },
-    { key: '2', genre: 'Drama' },
-    { key: '3', genre: 'Action' },
-  ]);
-
+  const [genresData, setGenresData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGenre, setEditingGenre] = useState(null);
   const [form] = Form.useForm();
 
+  // Fetch data dari backend
+  useEffect(() => {
+    fetchGenres();
+  }, []);
+
+  const fetchGenres = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/api/admin/genre');
+      setGenresData(
+        response.data.map((genre) => ({
+          key: genre.id,
+          genre: genre.name,
+        }))
+      );
+    } catch (error) {
+      console.error('Error fetching genres:', error);
+      message.error("Failed to fetch genres");
+    }
+  };
+
   const handleEdit = (record) => {
     setEditingGenre(record);
-    form.setFieldsValue(record);
+    form.setFieldsValue({ genre: record.genre });
     setIsModalOpen(true);
   };
 
-  const handleDelete = (key) => {
-    setGenresData(genresData.filter(genre => genre.key !== key));
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:3000/api/admin/genre/${id}`);
+      message.success("Genre deleted successfully");
+      fetchGenres();
+    } catch (error) {
+      console.error("Failed to delete genre:", error);
+      message.error("Failed to delete genre");
+    }
   };
 
-  const handleSave = (values) => {
-    if (editingGenre) {
-      setGenresData(genresData.map(genre => (genre.key === editingGenre.key ? { ...genre, ...values } : genre)));
-    } else {
-      const newGenre = {
-        key: `${genresData.length + 1}`,
-        ...values,
-      };
-      setGenresData([...genresData, newGenre]);
+  const handleSave = async (values) => {
+    try {
+      if (editingGenre) {
+        // Update genre
+        await axios.put(`http://localhost:3000/api/admin/genre/${editingGenre.key}`, { name: values.genre });
+        message.success("Genre updated successfully");
+      } else {
+        // Add new genre
+        await axios.post('http://localhost:3000/api/admin/genre', { name: values.genre });
+        message.success("Genre added successfully");
+      }
+      fetchGenres();
+      setIsModalOpen(false);
+      form.resetFields();
+      setEditingGenre(null);
+    } catch (error) {
+      console.error("Failed to save genre:", error);
+      message.error("Failed to save genre");
     }
-    setIsModalOpen(false);
-    setEditingGenre(null);
-    form.resetFields();
   };
 
   const handleAdd = () => {

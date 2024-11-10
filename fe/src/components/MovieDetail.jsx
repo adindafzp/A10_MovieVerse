@@ -3,12 +3,12 @@ import { Container, Row, Col, Carousel, Form, Button, Spinner, Alert  } from "re
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faYoutube } from "@fortawesome/free-brands-svg-icons";
 import { Link, useParams } from "react-router-dom";
-import { URL } from "../utils"; // Menggunakan URL dari backend lokal
+import { URL } from "../utils"; 
 import "../styles/MoviesPage.css";
 import axios from "axios";
 
 const MovieDetailPage = () => {
-  const { id } = useParams(); // Mendapatkan ID movie dari URL
+  const { id } = useParams();
   const [trailers, setTrailers] = useState([]);
   const [actors, setActors] = useState([]);
   const [recommendedMovies, setRecommendedMovies] = useState([]);
@@ -78,7 +78,6 @@ const MovieDetailPage = () => {
 
         const countryData = await countryResponse.json();
 
-        // Jika respons dari backend memiliki pembungkus, ambil hanya array `countries`
         if (Array.isArray(countryData.countries)) {
           setCountryList(countryData.countries); // Simpan array negara ke state
         } else {
@@ -294,7 +293,6 @@ const MovieDetailPage = () => {
                   ) : null // Skip this trailer if URL is null or empty
               )}
             </Carousel>
-            {/* Panah Navigasi Kustom dengan className berbeda */}
             <a
               className="custom-prev-left"
               role="button"

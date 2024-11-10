@@ -2,40 +2,28 @@
 const express = require("express");
 const userController = require("../controllers/userController");
 const { authMiddleware } = require("../middlewares/authMiddleware");
-const roleMiddleware = require("../middlewares/roleMiddleware"); // Tambahkan roleMiddleware
+const roleMiddleware = require("../middlewares/roleMiddleware");
 
 const passport = require("passport");
 const jwt = require("jsonwebtoken");
-const router = express.Router(); // Menggunakan express.Router()
+const router = express.Router();
 
-// Pastikan fungsi sendVerificationEmail dan verifyEmail diekspor dari userController
-const { sendVerificationEmail, verifyEmail } = userController;
+const { verifyEmail } = userController;
 
-// Route yang dilindungi dengan autentikasi
-router.get("/", authMiddleware, roleMiddleware(['admin']), userController.getAllUsers); // Hanya admin yang bisa mengakses
-router.get("/:id", authMiddleware, roleMiddleware(['admin', 'user']), userController.getUserById); // Admin dan pengguna biasa bisa mengakses
+// Route yang dilindungi dengan autentikasi dan role-based access control
+router.get("/", authMiddleware, roleMiddleware(["admin"]), userController.getAllUsers); 
+router.post("/create", authMiddleware, roleMiddleware(["admin"]), userController.createUser); 
+router.get("/:id", authMiddleware, roleMiddleware(["admin", "user"]), userController.getUserById);
+router.put("/:id", authMiddleware, roleMiddleware(["admin"]), userController.updateUser); 
+router.delete("/:id", authMiddleware, roleMiddleware(["admin"]), userController.deleteUser); 
+router.put("/:id/suspend", authMiddleware, roleMiddleware(["admin"]), userController.suspendUser);
 
-// Route publik untuk register dan login
-router.post("/register", async (req, res) => {
-  try {
-    const user = await userController.register(req, res);
-    if (user) {
-      await sendVerificationEmail(user, res); // Panggil sendVerificationEmail dengan benar
-    }
-  } catch (error) {
-    console.error("Error saat registrasi:", error);
-    res.status(500).json({ message: "Gagal registrasi." });
-  }
-});
-
+// Route publik untuk registrasi dan login
+router.post("/register", userController.register);
 router.post("/login", userController.login);
 
 // Forgot and Reset Password Routes
-router.post("/forgotPassword", (req, res, next) => {
-  console.log("Forgot password request received with email:", req.body.email);
-  next(); // Lanjutkan ke controller
-}, userController.forgotPassword);
-
+router.post("/forgotPassword", userController.forgotPassword);
 router.post("/resetPassword/:token", userController.resetPassword);
 
 // Redirect ke Google untuk login
@@ -61,6 +49,6 @@ router.get(
 );
 
 // Route untuk verifikasi email
-router.get('/verify/:token', verifyEmail);
+router.get("/verify/:token", verifyEmail);
 
 module.exports = router;

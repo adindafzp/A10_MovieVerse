@@ -8,7 +8,7 @@ exports.getAllGenres = async (req, res) => {
     res.status(200).json(genres);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Error fetching genres", error: err });
+    res.status(500).json({ message: "Error fetching genres", error: err.message });
   }
 };
 
@@ -17,15 +17,21 @@ exports.createGenre = async (req, res) => {
   const { name } = req.body;
 
   if (!name) {
-    return res.status(400).json({ message: "Name is required" });
+    return res.status(400).json({ message: "Genre name is required" });
   }
 
   try {
+    // Check for duplicate genre name
+    const existingGenre = await Genre.findOne({ where: { name } });
+    if (existingGenre) {
+      return res.status(400).json({ message: "Genre with this name already exists" });
+    }
+
     const genre = await Genre.create({ name });
     res.status(201).json({ message: "Genre created successfully", genre });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Error creating genre", error: err });
+    res.status(500).json({ message: "Error creating genre", error: err.message });
   }
 };
 
@@ -39,7 +45,7 @@ exports.getGenreById = async (req, res) => {
     res.status(200).json(genre);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Error fetching genre", error: err });
+    res.status(500).json({ message: "Error fetching genre", error: err.message });
   }
 };
 
@@ -53,13 +59,21 @@ exports.updateGenre = async (req, res) => {
       return res.status(404).json({ message: "Genre not found" });
     }
 
+    // Check for duplicate genre name if changed
+    if (name && name !== genre.name) {
+      const existingGenre = await Genre.findOne({ where: { name } });
+      if (existingGenre) {
+        return res.status(400).json({ message: "Genre with this name already exists" });
+      }
+    }
+
     genre.name = name || genre.name;
     await genre.save();
 
     res.status(200).json({ message: "Genre updated successfully", genre });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Error updating genre", error: err });
+    res.status(500).json({ message: "Error updating genre", error: err.message });
   }
 };
 
@@ -75,6 +89,6 @@ exports.deleteGenre = async (req, res) => {
     res.status(200).json({ message: "Genre deleted successfully" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Error deleting genre", error: err });
+    res.status(500).json({ message: "Error deleting genre", error: err.message });
   }
 };
