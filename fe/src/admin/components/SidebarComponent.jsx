@@ -12,8 +12,6 @@ const SidebarComponent = () => {
       <Link to="/cms/comments" className="nav-link">CMS Comments</Link>
       <Link to="/cms/movies" className="nav-link">CMS Movies</Link>
       <Link to="/cms/movies-input" className="nav-link">CMS Movies Input</Link>
-      <Link to="/cms/series" className="nav-link">CMS Series</Link>
-      <Link to="/cms/series-input" className="nav-link">CMS Series Input</Link>
     </Nav>
   );
 };

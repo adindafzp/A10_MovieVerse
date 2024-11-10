@@ -29,14 +29,6 @@ const MenuList = ({ darkTheme }) => {
           <Link to="/cms/movies-input">Input New Movies</Link>
         </Menu.Item>
       </Menu.SubMenu>
-      <Menu.SubMenu key="series" icon={<VideoCameraOutlined />} title="Series">
-        <Menu.Item key="validateSeries">
-          <Link to="/cms/series-approved">Validate</Link>
-        </Menu.Item>
-        <Menu.Item key="InputNewseries">
-          <Link to="/cms/series-input">Input New Series</Link>
-        </Menu.Item>
-      </Menu.SubMenu>
       <Menu.Item key="countries" icon={<FlagOutlined />}>
         <Link to="/cms/countries">Countries</Link>
       </Menu.Item>

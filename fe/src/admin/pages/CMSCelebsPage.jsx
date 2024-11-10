@@ -1,60 +1,94 @@
-import { useState } from 'react';
-import { Table, Button, Modal, Form, Input, Space, Upload, DatePicker } from 'antd';
-import { EditOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons';
-import "../style/CelebsPage.css";  // Jangan lupa buat file CSS-nya
+import { useState, useEffect, useMemo } from 'react';
+import { Table, Button, Modal, Form, Input, Space, DatePicker, Select, message, Typography } from 'antd';
+import { EditOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import axios from 'axios';
+import moment from 'moment';
+import "../style/CelebsPage.css";
 
-const CMSActors = () => {
-  const [actorsData, setActorsData] = useState([
-    {
-      key: '1',
-      country: 'Japan',
-      actorName: 'Takuya Kimura',
-      birthDate: '19 Desember 1975',
-      photo: '',
-    },
-    {
-      key: '2',
-      country: 'Japan',
-      actorName: 'Yuko Takeuchi',
-      birthDate: '19 Oktober 1977',
-      photo: '',
-    },
-  ]);
+const { Text } = Typography;
 
+const CMSCelebsPage = () => {
+  const [actorsData, setActorsData] = useState([]);
+  const [countries, setCountries] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [editingActor, setEditingActor] = useState(null);
+  const [selectedActor, setSelectedActor] = useState(null);
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    fetchActors();
+    fetchCountries();
+  }, []);
+
+  const fetchActors = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/api/admin/actors');
+      setActorsData(response.data);
+    } catch (error) {
+      console.error("Failed to fetch actors:", error);
+      message.error("Failed to fetch actors");
+    }
+  };
+
+  const fetchCountries = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/api/admin/country');
+      setCountries(response.data);
+    } catch (error) {
+      console.error("Failed to fetch countries:", error);
+      message.error("Failed to fetch countries");
+    }
+  };
 
   const handleEdit = (record) => {
     setEditingActor(record);
     form.setFieldsValue({
-      ...record,
-      birthDate: record.birthDate ? record.birthDate : null,
+      actorName: record.name,
+      birthDate: record.birthdate ? moment(record.birthdate) : null,
+      countryId: record.Country?.countryId,
+      biography: record.biography,
+      photo: record.image,
     });
     setIsModalOpen(true);
   };
 
-  const handleDelete = (key) => {
-    setActorsData(actorsData.filter(actor => actor.key !== key));
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:3000/api/admin/actors/${id}`);
+      message.success("Actor deleted successfully");
+      fetchActors();
+    } catch (error) {
+      console.error("Failed to delete actor:", error);
+      message.error("Failed to delete actor");
+    }
   };
 
-  const handleSave = (values) => {
-    if (editingActor) {
-      setActorsData(
-        actorsData.map(actor =>
-          actor.key === editingActor.key ? { ...actor, ...values } : actor
-        )
-      );
-    } else {
-      const newActor = {
-        key: `${actorsData.length + 1}`,
-        ...values,
+  const handleSave = async (values) => {
+    try {
+      const payload = {
+        name: values.actorName,
+        birthdate: values.birthDate ? values.birthDate.format("YYYY-MM-DD") : null,
+        countryId: values.countryId,
+        biography: values.biography,
+        image: values.photo,
       };
-      setActorsData([...actorsData, newActor]);
+
+      if (editingActor) {
+        await axios.put(`http://localhost:3000/api/admin/actors/${editingActor.id}`, payload);
+        message.success("Actor updated successfully");
+      } else {
+        await axios.post('http://localhost:3000/api/admin/actors', payload);
+        message.success("Actor added successfully");
+      }
+      fetchActors();
+      setIsModalOpen(false);
+      form.resetFields();
+      setEditingActor(null);
+    } catch (error) {
+      console.error("Failed to save actor:", error);
+      message.error("Failed to save actor");
     }
-    setIsModalOpen(false);
-    setEditingActor(null);
-    form.resetFields();
   };
 
   const handleAdd = () => {
@@ -63,17 +97,27 @@ const CMSActors = () => {
     setIsModalOpen(true);
   };
 
+  const handleShowDetails = (actor) => {
+    setSelectedActor(actor);
+    setIsDetailModalOpen(true);
+  };
+
+  const processedData = useMemo(
+    () => actorsData.map((actor, index) => ({
+      key: actor.id,
+      actorName: actor.name,
+      country: actor.Country?.name || 'Unknown',
+      actorData: actor,
+    })),
+    [actorsData]
+  );
+
   const columns = [
     {
       title: 'No',
       key: 'no',
       align: 'center',
-      render: (text, record, index) => index + 1, // Menggunakan index untuk nomor
-    },
-    {
-      title: 'Country',
-      dataIndex: 'country',
-      key: 'country',
+      render: (text, record, index) => index + 1,
     },
     {
       title: 'Actor Name',
@@ -81,16 +125,21 @@ const CMSActors = () => {
       key: 'actorName',
     },
     {
-      title: 'Birth Date',
-      dataIndex: 'birthDate',
-      key: 'birthDate',
+      title: 'Country',
+      dataIndex: 'country',
+      key: 'country',
     },
     {
-      title: 'Photos',
-      dataIndex: 'photo',
-      key: 'photo',
-      render: (text) => (
-        text ? <img src={text} alt="actor" style={{ width: '50px', height: '50px' }} /> : 'No Image'
+      title: 'Detail Info',
+      key: 'detail',
+      align: 'center',
+      render: (text, record) => (
+        <Button
+          icon={<InfoCircleOutlined />}
+          onClick={() => handleShowDetails(record.actorData)}
+        >
+          View Details
+        </Button>
       ),
     },
     {
@@ -102,7 +151,7 @@ const CMSActors = () => {
           <Button
             type="primary"
             icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
+            onClick={() => handleEdit(record.actorData)}
           />
           <Button
             type="danger"
@@ -120,22 +169,39 @@ const CMSActors = () => {
         <h2>Actors Management</h2>
         <Button type="primary" onClick={handleAdd}>Add New Actor</Button>
       </div>
-      <Table columns={columns} dataSource={actorsData} pagination={false} className="custom-table" />
+      <Table columns={columns} dataSource={processedData} pagination={false} className="custom-table" />
 
+      {/* Detail Info Modal */}
       <Modal
-        title={editingActor ? 'Edit Actor' : 'Add Actor'}
-        open={isModalOpen}
+        title="Actor Details"
+        visible={isDetailModalOpen}
+        onCancel={() => setIsDetailModalOpen(false)}
+        footer={<Button onClick={() => setIsDetailModalOpen(false)}>Close</Button>}
+      >
+        {selectedActor && (
+          <>
+            <p><strong>Name:</strong> {selectedActor.name}</p>
+            <p><strong>Birthdate:</strong> {selectedActor.birthdate ? moment(selectedActor.birthdate).format("YYYY-MM-DD") : 'N/A'}</p>
+            <p><strong>Country:</strong> {selectedActor.Country?.name || 'Unknown'}</p>
+            <p><strong>Biography:</strong> {selectedActor.biography || 'No biography available'}</p>
+            {selectedActor.image && <img src={selectedActor.image} alt="actor" style={{ width: '100%', marginTop: '10px' }} />}
+          </>
+        )}
+      </Modal>
+
+      {/* Add/Edit Actor Modal */}
+      <Modal
+        title={editingActor ? `Edit Actor: ${editingActor.name}` : 'Add Actor'}
+        visible={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={form.submit}
       >
+        {editingActor && (
+          <div style={{ marginBottom: '20px' }}>
+            <Text type="secondary">Editing actor: {editingActor.name}</Text>
+          </div>
+        )}
         <Form form={form} layout="vertical" onFinish={handleSave}>
-          <Form.Item
-            label="Country"
-            name="country"
-            rules={[{ required: true, message: 'Please input the country!' }]}
-          >
-            <Input />
-          </Form.Item>
           <Form.Item
             label="Actor Name"
             name="actorName"
@@ -148,21 +214,32 @@ const CMSActors = () => {
             name="birthDate"
             rules={[{ required: true, message: 'Please input the birth date!' }]}
           >
-            <DatePicker format="DD MMMM YYYY" />
+            <DatePicker format="YYYY-MM-DD" />
           </Form.Item>
           <Form.Item
-            label="Upload Picture"
-            name="photo"
-            valuePropName="fileList"
-            getValueFromEvent={(e) => e && e.fileList}
+            label="Country"
+            name="countryId"
+            rules={[{ required: true, message: 'Please select the country!' }]}
           >
-            <Upload
-              listType="picture"
-              maxCount={1}
-              beforeUpload={() => false}  // Prevent auto-upload
-            >
-              <Button icon={<UploadOutlined />}>Upload</Button>
-            </Upload>
+            <Select placeholder="Select a country">
+              {countries.map(country => (
+                <Select.Option key={country.countryId} value={country.countryId}>
+                  {country.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            label="Biography"
+            name="biography"
+          >
+            <Input.TextArea rows={4} placeholder="Enter biography" />
+          </Form.Item>
+          <Form.Item
+            label="Photo URL"
+            name="photo"
+          >
+            <Input placeholder="Paste photo URL here" />
           </Form.Item>
         </Form>
       </Modal>
@@ -170,4 +247,4 @@ const CMSActors = () => {
   );
 };
 
-export default CMSActors;
+export default CMSCelebsPage;

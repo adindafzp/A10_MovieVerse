@@ -1,6 +1,8 @@
+// controllers/MovieActorController.js
 const { MovieActor, Movie, Actor } = require("../models/index");
 
 class MovieActorController {
+  // Add an actor to a movie
   static async addActorToMovie(req, res) {
     const { movieId, actorId } = req.body;
     try {
@@ -12,8 +14,24 @@ class MovieActorController {
         return res.status(404).json({ message: "Movie or Actor not found" });
       }
 
+      // Check for existing association to prevent duplication
+      const existingAssociation = await MovieActor.findOne({
+        where: { movieId, actorId },
+      });
+      if (existingAssociation) {
+        return res.status(400).json({ message: "Actor already added to this movie" });
+      }
+
+      // Create the association
       const movieActor = await MovieActor.create({ movieId, actorId });
-      return res.status(201).json(movieActor);
+      
+      // Return complete data with movie and actor info
+      const result = await MovieActor.findOne({
+        where: { movieId, actorId },
+        include: [{ model: Movie }, { model: Actor }]
+      });
+
+      return res.status(201).json(result);
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
@@ -25,7 +43,7 @@ class MovieActorController {
 
     try {
       const movie = await Movie.findByPk(movieId, {
-        include: [{ model: Actor }],
+        include: [{ model: Actor, as: "Actors" }], // Ensure alias "Actors" matches your associations
       });
 
       if (!movie) {
@@ -44,7 +62,7 @@ class MovieActorController {
 
     try {
       const actor = await Actor.findByPk(actorId, {
-        include: [{ model: Movie }],
+        include: [{ model: Movie, as: "Movies" }], // Ensure alias "Movies" matches your associations
       });
 
       if (!actor) {
@@ -57,6 +75,7 @@ class MovieActorController {
     }
   }
 
+  // Remove an actor from a movie
   static async removeActorFromMovie(req, res) {
     const { movieId, actorId } = req.body;
 
@@ -66,9 +85,7 @@ class MovieActorController {
       });
 
       if (!movieActor) {
-        return res
-          .status(404)
-          .json({ message: "Actor not found in this movie" });
+        return res.status(404).json({ message: "Actor not found in this movie" });
       }
 
       await movieActor.destroy();

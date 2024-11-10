@@ -6,8 +6,8 @@ const MovieVideo = require("./MovieVideo");
 const Genre = require('./Genre');
 const MovieGenre = require('./MovieGenre'); 
 const Country = require('./Country');
-const Review = require('./Review'); // Import Review
-const User = require('./User'); // Import User jika belum ada
+const Review = require('./Review');
+const User = require('./User');
 
 // Define associations in one place
 
@@ -28,12 +28,16 @@ Movie.belongsToMany(Actor, { through: "MovieActor", foreignKey: "movieId", as: "
 Actor.belongsToMany(Movie, { through: "MovieActor", foreignKey: "actorId", as: "Movies" });
 
 // Relasi One-to-Many antara Movie dan Country
-Country.hasMany(Movie, { foreignKey: "countryId" }); // Satu Country bisa memiliki banyak Movie
-Movie.belongsTo(Country, { foreignKey: "countryId", as: "Country" }); // Satu Movie hanya memiliki satu Country
+Country.hasMany(Movie, { foreignKey: "countryId" });
+Movie.belongsTo(Country, { foreignKey: "countryId", as: "Country" });
+
+// Relasi antara Actor dan Country
+Country.hasMany(Actor, { foreignKey: "countryId" }); // Satu Country bisa memiliki banyak Actor
+Actor.belongsTo(Country, { foreignKey: "countryId", as: "Country" }); // Satu Actor hanya memiliki satu Country
 
 // Relasi Review dengan Movie (One-to-Many)
 Movie.hasMany(Review, { foreignKey: "movieId" });
-Review.belongsTo(Movie, { foreignKey: "movieId", as: "Movie" }); // Pastikan `as` sama dengan di frontend
+Review.belongsTo(Movie, { foreignKey: "movieId", as: "Movie" });
 
 // Relasi Review dengan User (One-to-Many)
 User.hasMany(Review, { foreignKey: "userId" });
@@ -49,5 +53,5 @@ module.exports = {
   MovieGenre, 
   Country, 
   User, 
-  Review // Export Review model
+  Review
 };
