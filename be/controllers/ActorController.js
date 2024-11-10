@@ -15,8 +15,30 @@ class ActorController {
   // Get all actors
   static async getAll(req, res) {
     try {
-      const actors = await Actor.findAll();
-      return res.status(200).json(actors);
+      const { page = 1, limit = 10, search = "" } = req.query;
+      const offset = (page - 1) * limit;
+
+      // Filter pencarian case-insensitive menggunakan MySQL
+      const { count, rows: actors } = await Actor.findAndCountAll({
+        where: {
+          name: {
+            [Op.like]: `%${search}%`,
+          },
+        },
+        offset: parseInt(offset),
+        limit: parseInt(limit),
+        attributes: ["id", "name", "image"], // Mengambil id, name, dan image untuk autocomplete
+      });
+
+      return res.json({
+        actors,
+        meta: {
+          totalItems: count,
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(count / limit),
+          itemsPerPage: parseInt(limit),
+        },
+      });
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
