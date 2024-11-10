@@ -15,6 +15,9 @@ const User = require('./User');
 Director.hasMany(Movie, { foreignKey: "directorId" });
 Movie.belongsTo(Director, { foreignKey: "directorId" });
 
+Country.hasMany(Director, { foreignKey: "countryId", as: "Directors" });
+Director.belongsTo(Country, { foreignKey: "countryId", as: "Country" });
+
 // Relasi Movie dengan MovieVideo (One-to-Many)
 Movie.hasMany(MovieVideo, { foreignKey: "movieId" });
 MovieVideo.belongsTo(Movie, { foreignKey: "movieId" });

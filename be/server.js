@@ -76,7 +76,7 @@ app.use("/api/admin/user", userRoutes);
 app.use("/api/admin/genre", genreRoutes);
 app.use("/api/admin/country", countryRoutes);
 app.use("/api/admin/award", awardRoutes);
-app.use("/api/admin/director", directorRoutes);
+app.use("/api/admin/directors", directorRoutes);
 app.use("/api/admin/movie", movieRoutes);
 app.use("/api/admin/movie-videos", movieVideosRoutes);
 app.use("/api/admin/actors", actorRoutes);

@@ -14,6 +14,7 @@ import CMSMoviesValPage from "../admin/pages/CMSMoviesValPage";
 import CMSInputNewMoviesPage from "../admin/pages/CMSInputNewMoviesPage";
 import CMSCountriesPage from "../admin/pages/CMSCountriesPage";
 import CMSCelebsPage from "../admin/pages/CMSCelebsPage";
+import CMSDirectorsPage from "../admin/pages/CMSDirectorsPage";
 import CMSCommentsPage from "../admin/pages/CMSCommentsPage";
 
 console.log("Sider rendered");
@@ -56,6 +57,7 @@ function CMSRoutes() {
           <Route path="/cms/movies-input" element={<CMSInputNewMoviesPage />} />
           <Route path="/cms/countries" element={<CMSCountriesPage />} />
           <Route path="/cms/celebs" element={<CMSCelebsPage />} />
+          <Route path="/cms/directors" element={<CMSDirectorsPage />} />
         </Routes>
       </Content>
     </Layout>
