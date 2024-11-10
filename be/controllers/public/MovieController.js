@@ -122,97 +122,52 @@ class PublicMovieController {
   }
   // Menambahkan film baru
   static async addMovie(req, res) {
-    const { title, year, country, synopsis, genres, actors, trailer, poster } =
-      req.body;
+    const { title, year, country, synopsis, genres, actors, trailer, poster, directorId, rating } = req.body;
     const userId = req.userId; // Mendapatkan userId dari middleware
-
+  
     try {
       // Menambahkan film baru dengan data dari req.body
       const newMovie = await Movie.create({
         title,
-        release_date: year, // Sesuaikan dengan kolom `release_date`
-        countryId: country, // Sesuaikan dengan kolom `countryId`
+        release_date: year,
+        countryId: country,
         synopsis,
-        poster_url: poster, // Sesuaikan dengan kolom `poster_url`
-        trailer_url: trailer, // Sesuaikan dengan kolom `trailer_url`
-        addedBy: userId, // Simpan ID pengguna yang menambahkan film
-        approval_status: 0, // Default ke 0 (belum disetujui)
+        poster_url: poster,
+        trailer_url: trailer,
+        directorId: directorId,
+        addedBy: userId,
+        approval_status: 0,
+        rating, 
       });
-
-      // Tambahkan genre dan aktor jika diperlukan
-      if (genres) {
-        await newMovie.setGenres(genres); // Asosiasikan dengan genre
+  
+      // Cek apakah movie berhasil dibuat
+      console.log("New Movie:", newMovie);
+  
+      // Validasi apakah newMovie memiliki ID
+      if (!newMovie || !newMovie.id) {
+        return res.status(500).json({ message: "Failed to retrieve movie ID" });
       }
-      if (actors) {
-        await newMovie.setActors(actors); // Asosiasikan dengan aktor
+  
+      // Tambahkan genre dan aktor jika ada
+      if (genres && genres.length > 0) {
+        console.log("Associating genres:", genres);
+        await newMovie.setGenres(genres);
       }
-
+      if (actors && actors.length > 0) {
+        console.log("Associating actors:", actors);
+        await newMovie.setActors(actors);
+      }
+  
       res.status(201).json({
         message: "Movie added successfully and is pending approval",
         newMovie,
       });
     } catch (error) {
-      res
-        .status(500)
-        .json({ message: "Failed to add movie", error: error.message });
+      console.error("Error during movie creation:", error);
+      res.status(500).json({ message: "Failed to add movie", error: error.message });
     }
-  }
+  }   
 
-  //   static async searchMovies(req, res) {
-  //     try {
-  //         const { query, genre, releaseYear, rating } = req.query;
-
-  //         console.log("Query Parameters:", req.query); // Logging parameter yang diterima
-
-  //         const whereClause = {};
-  //         if (query) {
-  //             whereClause.title = { [Op.like]: `%${query}%` };
-  //             console.log("Title Filter:", whereClause.title);
-  //         }
-  //         if (releaseYear) {
-  //             whereClause.release_date = releaseYear; // Perhatikan bahwa harus sesuai dengan nama kolom di database
-  //             console.log("Release Year Filter:", whereClause.release_date);
-  //         }
-  //         if (rating) {
-  //             whereClause.rating = { [Op.gte]: rating };
-  //             console.log("Rating Filter:", whereClause.rating);
-  //         }
-
-  //         const genreInclude = genre
-  //             ? {
-  //                 model: Genre,
-  //                 as: "Genres",
-  //                 where: { name: genre },
-  //             }
-  //             : {
-  //                 model: Genre,
-  //                 as: "Genres",
-  //             };
-
-  //         const movies = await Movie.findAll({
-  //             where: whereClause,
-  //             include: [
-  //                 genreInclude,
-  //                 {
-  //                     model: Actor,
-  //                     as: "Actors",
-  //                 },
-  //             ],
-  //             limit: 100,
-  //         });
-
-  //         console.log("Movies found:", movies);
-
-  //         if (!movies || movies.length === 0) {
-  //             return res.status(404).json({ error: "Movie not found" });
-  //         }
-
-  //         return res.status(200).json(movies);
-  //     } catch (error) {
-  //         console.error("Error in searchMovies:", error.message);
-  //         return res.status(500).json({ message: "Error retrieving movies", error: error.message });
-  //     }
-  // }
   static async searchMovies(req, res) {
     try {
       const { query, genre, releaseYear, rating, country, sortBy, category } =

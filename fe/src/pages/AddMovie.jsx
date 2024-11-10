@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { Container, Row, Col, Form, Button } from "react-bootstrap";
+import { Container, Row, Col, Form, Button, Spinner } from "react-bootstrap";
 import Swal from "sweetalert2";
 import "../styles/AddMovie.css";
 import { URL } from "../utils";
@@ -11,29 +11,41 @@ const AddMoviePage = () => {
   const [country, setCountry] = useState("");
   const [countries, setCountries] = useState([]);
   const [synopsis, setSynopsis] = useState("");
-  const [genres, setGenres] = useState([
-    { id: 1, name: "Action" },
-    { id: 2, name: "Drama" },
-    { id: 3, name: "Comedy" },
-    { id: 4, name: "Romance" },
-    { id: 5, name: "Horror" },
-  ]);
+  const [genres, setGenres] = useState([]);
   const [selectedGenres, setSelectedGenres] = useState([]);
   const [posterLink, setPosterLink] = useState("");
   const [rating, setRating] = useState("");
-  const [actors, setActors] = useState("");
+  const [actorInput, setActorInput] = useState("");
+  const [suggestedActors, setSuggestedActors] = useState([]);
+  const [selectedActors, setSelectedActors] = useState([]);
   const [errors, setErrors] = useState({});
+  const [previewPoster, setPreviewPoster] = useState("");
+  const [trailerLink, setTrailerLink] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [directorInput, setDirectorInput] = useState("");
+  const [suggestedDirectors, setSuggestedDirectors] = useState([]);
+  const [selectedDirector, setSelectedDirector] = useState(null);
 
   useEffect(() => {
-    fetch("https://restcountries.com/v3.1/all")
-      .then((res) => res.json())
-      .then((data) => {
-        const sortedCountries = data
-          .map((country) => ({ name: country.name.common }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-        setCountries(sortedCountries);
-      })
-      .catch((error) => console.error("Fetch error:", error));
+    const fetchData = async () => {
+      try {
+        const [countriesResponse, genresResponse, actorsResponse] =
+          await Promise.all([
+            axios.get(`${URL}/countries`),
+            axios.get(`${URL}/genres`),
+            axios.get(`${URL}/actors`),
+          ]);
+
+        setCountries(countriesResponse.data.countries || []);
+        setGenres(genresResponse.data.genres || []);
+        setSuggestedActors(actorsResponse.data.actors || []);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        Swal.fire("Error", "Failed to fetch data from backend", "error");
+      }
+    };
+
+    fetchData();
   }, []);
 
   const handleGenreChange = (genreId) => {
@@ -44,36 +56,144 @@ const AddMoviePage = () => {
     );
   };
 
+  const fetchActors = async (searchInput) => {
+    try {
+      const response = await axios.get(`${URL}/actors`, {
+        params: {
+          search: searchInput,
+          limit: 10,
+        },
+      });
+      setSuggestedActors(response.data.actors || []);
+    } catch (error) {
+      console.error("Error fetching actors:", error);
+      Swal.fire("Error", "Failed to fetch actors", "error");
+    }
+  };
+
+  const handleActorInputChange = (e) => {
+    const input = e.target.value;
+    setActorInput(input);
+
+    if (input.length > 0) {
+      fetchActors(input);
+    } else {
+      setSuggestedActors([]);
+    }
+  };
+
+  const handleActorSelect = (actor) => {
+    if (!selectedActors.some((a) => a.id === actor.id)) {
+      setSelectedActors((prevActors) => [...prevActors, actor]);
+      setActorInput("");
+      setSuggestedActors([]);
+    }
+  };
+
+  const handleRemoveActor = (actorId) => {
+    setSelectedActors((prevActors) =>
+      prevActors.filter((actor) => actor.id !== actorId)
+    );
+  };
+
+  const fetchDirectors = async (searchInput) => {
+    try {
+      const response = await axios.get(`${URL}/directors`, {
+        params: {
+          search: searchInput,
+        },
+      });
+      setSuggestedDirectors(response.data || []);
+    } catch (error) {
+      console.error("Error fetching directors:", error);
+      Swal.fire("Error", "Failed to fetch directors", "error");
+    }
+  };
+
+  const handleDirectorInputChange = (e) => {
+    const input = e.target.value;
+    setDirectorInput(input);
+
+    if (input.length > 0) {
+      fetchDirectors(input);
+    } else {
+      setSuggestedDirectors([]);
+    }
+  };
+
+  const handleDirectorSelect = (director) => {
+    setSelectedDirector(director);
+    setDirectorInput(director.name);
+    setSuggestedDirectors([]); // Reset setelah memilih
+  };
+
   const validateForm = () => {
     const newErrors = {};
+
     if (!title) newErrors.title = "Title is required";
     if (!releaseDate) newErrors.releaseDate = "Release date is required";
     if (!country) newErrors.country = "Country is required";
     if (!synopsis) newErrors.synopsis = "Synopsis is required";
-    if (selectedGenres.length === 0) newErrors.genres = "Please select at least one genre";
-    if (!actors) newErrors.actors = "Please add at least one actor";
-    if (!/^https?:\/\/.+\..+$/.test(posterLink)) newErrors.posterLink = "Invalid poster URL";
-    if (!rating || rating < 1 || rating > 10) newErrors.rating = "Rating must be between 1 and 10";
+    if (selectedGenres.length === 0)
+      newErrors.genres = "Please select at least one genre";
+    if (selectedActors.length === 0)
+      newErrors.actors = "Please select at least one actor";
+    if (!selectedDirector) {
+      newErrors.director = "Please select a director";
+    }
+
+    // Validasi untuk poster URL
+    if (!/^(https?:\/\/.*\.(?:png|jpg|jpeg|gif))$/i.test(posterLink)) {
+      newErrors.posterLink = "Invalid poster URL";
+    }
+
+    // Validasi untuk rating
+    if (!rating || isNaN(parseFloat(rating)) || rating < 1 || rating > 10) {
+      newErrors.rating = "Rating must be a valid number between 1 and 10";
+    }
+
+    // Validasi untuk trailer URL
+    if (
+      !/^(https?:\/\/(www\.)?(youtube\.com|youtu\.be|vimeo\.com)\/[^\s]+(\?.*)?)$/i.test(
+        trailerLink
+      )
+    ) {
+      newErrors.trailerLink = "Invalid trailer URL";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handlePosterPreview = (e) => {
+    const url = e.target.value;
+    setPosterLink(url);
+    if (/^(https?:\/\/.*\.(?:png|jpg|jpeg|gif))$/i.test(url)) {
+      setPreviewPoster(url);
+    } else {
+      setPreviewPoster("");
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
+      setIsLoading(true);
       try {
         const formData = {
           title,
-          year: releaseDate,
+          releaseDate,
           country,
           synopsis,
           genres: selectedGenres,
-          actors,
+          directorId: selectedDirector ? selectedDirector.id : null,
+          actors: selectedActors.map((actor) => actor.id),
           poster: posterLink,
+          trailer: trailerLink,
           rating: parseFloat(rating),
         };
 
-        const response = await axios.post(`${URL}/movies/add`, formData, {
+        await axios.post(`${URL}/movies/add`, formData, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -86,12 +206,18 @@ const AddMoviePage = () => {
         setCountry("");
         setSynopsis("");
         setSelectedGenres([]);
-        setActors("");
+        setSelectedDirector(null);
+        setSelectedActors([]);
         setPosterLink("");
+        setTrailerLink("");
         setRating("");
+        setPreviewPoster("");
       } catch (error) {
-        Swal.fire("Error", "Failed to add movie", "error");
-        console.error("Error adding movie:", error);
+        const errorMessage =
+          error.response?.data?.message || "Failed to add movie";
+        Swal.fire("Error", errorMessage, "error");
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -108,7 +234,9 @@ const AddMoviePage = () => {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
-          {errors.title && <small className="text-danger">{errors.title}</small>}
+          {errors.title && (
+            <small className="text-danger">{errors.title}</small>
+          )}
         </Form.Group>
 
         <Row className="mb-4">
@@ -120,7 +248,9 @@ const AddMoviePage = () => {
                 value={releaseDate}
                 onChange={(e) => setReleaseDate(e.target.value)}
               />
-              {errors.releaseDate && <small className="text-danger">{errors.releaseDate}</small>}
+              {errors.releaseDate && (
+                <small className="text-danger">{errors.releaseDate}</small>
+              )}
             </Form.Group>
           </Col>
           <Col md={6}>
@@ -133,54 +263,40 @@ const AddMoviePage = () => {
                 min="1"
                 max="10"
               />
-              {errors.rating && <small className="text-danger">{errors.rating}</small>}
+              {errors.rating && (
+                <small className="text-danger">{errors.rating}</small>
+              )}
             </Form.Group>
           </Col>
         </Row>
 
         <Form.Group className="mb-4">
           <Form.Label>Country</Form.Label>
-          <Form.Control as="select" value={country} onChange={(e) => setCountry(e.target.value)}>
+          <Form.Select
+            value={country}
+            onChange={(e) => setCountry(Number(e.target.value))} // Simpan sebagai ID (angka)
+          >
             <option value="">Select Country</option>
             {countries.map((country) => (
-              <option key={country.name} value={country.name}>
+              <option key={country.countryId} value={country.countryId}>
                 {country.name}
               </option>
             ))}
-          </Form.Control>
-        </Form.Group>
-
-        <Form.Group className="mb-4">
-          <Form.Label>Poster URL</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="Enter poster link"
-            value={posterLink}
-            onChange={(e) => setPosterLink(e.target.value)}
-          />
-        </Form.Group>
-
-        <Form.Group className="mb-4">
-          <Form.Label>Actors</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="Enter actor names separated by commas"
-            value={actors}
-            onChange={(e) => setActors(e.target.value)}
-          />
+          </Form.Select>
         </Form.Group>
 
         <Form.Group className="mb-4">
           <Form.Label>Genres</Form.Label>
-          <div className="d-flex flex-wrap">
+          <div className="genre-checkbox-container">
             {genres.map((genre) => (
-              <Form.Check
-                key={genre.id}
-                type="checkbox"
-                label={genre.name}
-                checked={selectedGenres.includes(genre.id)}
-                onChange={() => handleGenreChange(genre.id)}
-              />
+              <div key={genre.id} className="genre-checkbox-item">
+                <Form.Check
+                  type="checkbox"
+                  label={genre.name}
+                  checked={selectedGenres.includes(genre.id)}
+                  onChange={() => handleGenreChange(genre.id)}
+                />
+              </div>
             ))}
           </div>
         </Form.Group>
@@ -196,8 +312,100 @@ const AddMoviePage = () => {
           />
         </Form.Group>
 
-        <Button variant="danger" type="submit" className="submit-button">
-          Submit
+        <Form.Group className="mb-4 position-relative">
+          <Form.Label>Director</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Type director's name"
+            value={directorInput}
+            onChange={handleDirectorInputChange}
+            autoComplete="off"
+          />
+          {directorInput && suggestedDirectors.length > 0 && (
+            <div className="autocomplete-dropdown">
+              {suggestedDirectors.map((director) => (
+                <li
+                  key={director.id}
+                  className="autocomplete-item"
+                  onClick={() => handleDirectorSelect(director)}
+                >
+                  {director.name}
+                </li>
+              ))}
+            </div>
+          )}
+        </Form.Group>
+
+        <Form.Group className="mb-4 position-relative">
+          <Form.Label>Actors</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Type actor's name"
+            value={actorInput}
+            onChange={handleActorInputChange}
+            autoComplete="off"
+          />
+          {actorInput && suggestedActors.length > 0 && (
+            <div className="autocomplete-dropdown">
+              {suggestedActors.map((actor) => (
+                <li
+                  key={actor.id}
+                  className="autocomplete-item"
+                  onClick={() => handleActorSelect(actor)}
+                >
+                  {actor.name}
+                </li>
+              ))}
+            </div>
+          )}
+        </Form.Group>
+
+        <div className="selected-actors-list">
+          {selectedActors.map((actor) => (
+            <div key={actor.id} className="selected-actor-item">
+              <img src={actor.image} alt={actor.name} className="actor-photo" />
+              <button
+                className="remove-btn"
+                onClick={() => handleRemoveActor(actor.id)}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <Form.Group className="mb-4">
+          <Form.Label>Trailer URL</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter trailer link"
+            value={trailerLink}
+            onChange={(e) => setTrailerLink(e.target.value)}
+          />
+          {errors.trailerLink && (
+            <small className="text-danger">{errors.trailerLink}</small>
+          )}
+        </Form.Group>
+
+        <Form.Group className="mb-4">
+          <Form.Label>Poster URL</Form.Label>
+          <Form.Control
+            type="text"
+            placeholder="Enter poster link"
+            value={posterLink}
+            onChange={handlePosterPreview}
+          />
+          {previewPoster && (
+            <img
+              src={previewPoster}
+              alt="Poster Preview"
+              className="poster-preview"
+            />
+          )}
+        </Form.Group>
+
+        <Button variant="danger" type="submit" disabled={isLoading}>
+          {isLoading ? <Spinner animation="border" size="sm" /> : "Submit"}
         </Button>
       </Form>
     </Container>

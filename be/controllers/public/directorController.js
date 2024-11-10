@@ -2,29 +2,52 @@ const { Op } = require("sequelize");
 const { Director, Movie, Series } = require("../../models/index");
 
 class DirectorControllerPublic {
+  // static async getAll(req, res, next) {
+  //   try {
+  //     const { page = 1, limit = 10 } = req.query;
+  //     const offset = (page - 1) * limit;
+
+  //     const { count, rows: directors } = await Director.findAndCountAll({
+  //       offset: parseInt(offset),
+  //       limit: parseInt(limit),
+  //     });
+
+  //     return res.json({
+  //       directors,
+  //       meta: {
+  //         totalItems: count,
+  //         currentPage: parseInt(page),
+  //         totalPages: Math.ceil(count / limit),
+  //         itemsPerPage: parseInt(limit),
+  //       },
+  //     });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // }
+
   static async getAll(req, res, next) {
     try {
-      const { page = 1, limit = 10 } = req.query;
-      const offset = (page - 1) * limit;
-
-      const { count, rows: directors } = await Director.findAndCountAll({
-        offset: parseInt(offset),
-        limit: parseInt(limit),
+      const { search } = req.query;
+  
+      const whereClause = search
+        ? {
+            name: {
+              [Op.like]: `%${search}%`,
+            },
+          }
+        : {};
+  
+      const directors = await Director.findAll({
+        where: whereClause,
+        attributes: ['id', 'name'], // Hanya mengambil id dan name
       });
-
-      return res.json({
-        directors,
-        meta: {
-          totalItems: count,
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(count / limit),
-          itemsPerPage: parseInt(limit),
-        },
-      });
+  
+      return res.json(directors);
     } catch (error) {
       next(error);
     }
-  }
+  }  
 
   static async getById(req, res, next) {
     try {
