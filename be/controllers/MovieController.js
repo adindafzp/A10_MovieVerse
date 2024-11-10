@@ -8,6 +8,7 @@ const MovieVideo = require("../models/MovieVideo");
 
 class MovieController {
   // Create a new movie
+<<<<<<< HEAD
   static async create(req, res) {
     try {
       // Create the main movie entry
@@ -34,7 +35,19 @@ class MovieController {
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
+=======
+// controllers/MovieController.js
+static async create(req, res) {
+  try {
+    console.log("Data received in create movie:", req.body);
+    const movie = await Movie.create(req.body);
+    return res.status(201).json(movie);
+  } catch (error) {
+    console.error("Error in create movie:", error);
+    return res.status(500).json({ error: error.message });
+>>>>>>> c472b94 (input new movies/add movies by admin)
   }
+}
 
   // Get all movies with related data
   static async getAll(req, res) {
