@@ -1,35 +1,53 @@
-import { useState } from "react";
-import { Table, Button, Select, InputNumber, Space, Modal } from "antd";
+import { useState, useEffect } from "react";
+import {
+  Table,
+  Button,
+  Select,
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  message,
+  Space,
+} from "antd";
+import { EditOutlined, DeleteOutlined, CheckOutlined } from "@ant-design/icons";
+import axios from "axios";
+import { URL } from "../../utils";
 import "../style/MoviesValidate.css";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 
 const { Option } = Select;
 
 const CMSmoviesValidate = () => {
-  const [statusFilter, setStatusFilter] = useState("Unapproved");
+  const [statusFilter, setStatusFilter] = useState("None");
   const [showCount, setShowCount] = useState(10);
+  const [dataSource, setDataSource] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedMovie, setSelectedMovie] = useState(null); // For storing selected movie details
+  const [form] = Form.useForm();
+  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingMovie, setEditingMovie] = useState(null);
 
-  const moviesData = [
-    {
-      key: "1",
-      movies: "[2024] Japan - Eye Love You",
-      actors: "Takuya Kimura, Takeuchi Yuko, Neinen Reina",
-      genres: "Romance, Adventures, Comedy",
-      synopsis: `I love this movie. It taught me a lot about money and finance. Love is not everything.
-                 We need to face the reality too. Being stoic is the best.`,
-      status: "Unapproved",
-      otherTitles: ["Title 2", "Title 3", "Title 4"],
-      year: "Spring 2024",
-      rating: "3.5/5",
-      availability: "Fansub: @aoisub on X",
-      actorsList: ["Actor 1", "Actor 2", "Actor 3", "Actor 4", "Actor 5"],
-    },
-  ];
+  // Fetch movies data from backend
+  useEffect(() => {
+    const fetchMovies = async () => {
+      try {
+        setIsLoading(true);
+        const response = await axios.get(`${URL}/admin/movie`);
+        console.log("Fetched movies data:", response.data);
+        setDataSource(response.data);
+      } catch (error) {
+        console.error("Error fetching movies:", error);
+        message.error("Failed to fetch movies data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  const [dataSource, setDataSource] = useState(moviesData);
+    fetchMovies();
+  }, []);
 
+  // Handle filter change
   const handleStatusChange = (value) => {
     setStatusFilter(value);
   };
@@ -38,68 +56,190 @@ const CMSmoviesValidate = () => {
     setShowCount(value);
   };
 
-  const handleApprove = (record) => {
-    setSelectedMovie(record); // Set the movie details for the popup
-    setIsModalOpen(true); // Open the popup modal
+  // Aksi: Edit, Delete, Approve
+  const handleEdit = async (record) => {
+    try {
+      const response = await axios.get(`${URL}/admin/movie/${record.id}`);
+      const movieData = response.data;
+  
+      const actorsList = movieData.Actors?.map((actor) => actor.name).join(", ") || "";
+      const genresList = movieData.Genres?.map((genre) => genre.name).join(", ") || "";
+  
+      const formData = {
+        title: movieData.title,
+        rating: movieData.rating,
+        synopsis: movieData.synopsis,
+        release_date: movieData.release_date,
+        director: movieData.Director?.name || "",
+        country: movieData.Country?.name || "",
+        actors: actorsList,
+        genres: genresList,
+        poster_url: movieData.poster_url,
+        trailer_url: movieData.trailer_url,
+      };
+  
+      form.setFieldsValue(formData);
+      setEditingMovie(movieData);
+      setIsEditModalOpen(true);
+    } catch (error) {
+      message.error("Failed to fetch movie details");
+      console.error("Failed to fetch movie details:", error);
+    }
+  };  
+
+  const handleSaveEdit = async (values) => {
+    try {
+      await axios.put(`${URL}/admin/movie/${editingMovie.id}`, values);
+      setDataSource((prevData) =>
+        prevData.map((movie) =>
+          movie.id === editingMovie.id ? { ...movie, ...values } : movie
+        )
+      );
+      message.success("Movie updated successfully");
+      setIsEditModalOpen(false);
+      setEditingMovie(null);
+    } catch (error) {
+      message.error("Failed to update movie");
+      console.error("Failed to update movie:", error);
+    }
   };
 
-  const handleDelete = (key) => {
-    setDataSource(dataSource.filter((movie) => movie.key !== key));
+  const handleDelete = async (movieId) => {
+    try {
+      await axios.delete(`${URL}/admin/movie/${movieId}`);
+      setDataSource((prevData) =>
+        prevData.filter((movie) => movie.id !== movieId)
+      );
+      message.success("Movie deleted successfully");
+    } catch (error) {
+      message.error("Failed to delete movie");
+      console.error("Failed to delete movie:", error);
+    }
   };
 
+  const handleApprove = async (movieId) => {
+    try {
+      await axios.put(`${URL}/admin/movie/${movieId}/approve`);
+      setDataSource((prevData) =>
+        prevData.map((movie) =>
+          movie.id === movieId ? { ...movie, approval_status: 1 } : movie
+        )
+      );
+      message.success("Movie approved successfully");
+    } catch (error) {
+      message.error("Failed to approve movie");
+      console.error("Failed to approve movie:", error);
+    }
+  };
+
+  // Open modal to show movie details
+  const handleViewDetails = (record) => {
+    setSelectedMovie(record);
+    setIsModalOpen(true);
+  };
+
+  const renderMovieDetails = () => (
+    <div>
+      <h2>{selectedMovie.title}</h2>
+      <p>
+        <strong>Rating:</strong> {selectedMovie.rating}/10
+      </p>
+      <p>
+        <strong>Release Date:</strong> {selectedMovie.release_date}
+      </p>
+      <p>
+        <strong>Synopsis:</strong> {selectedMovie.synopsis}
+      </p>
+      <p>
+        <strong>Director:</strong> {selectedMovie.Director?.name || "N/A"}
+      </p>
+      <p>
+        <strong>Country:</strong> {selectedMovie.Country?.name || "N/A"}
+      </p>
+
+      <p>
+        <strong>Actors:</strong>{" "}
+        {selectedMovie.Actors?.map((actor) => actor.name).join(", ") || "N/A"}
+      </p>
+      <p>
+        <strong>Genres:</strong>{" "}
+        {selectedMovie.Genres?.map((genre) => genre.name).join(", ") || "N/A"}
+      </p>
+      <img
+        src={selectedMovie.poster_url}
+        alt="Poster"
+        style={{ width: "100%", maxHeight: "400px", objectFit: "cover" }}
+      />
+      <a
+        href={selectedMovie.trailer_url}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Watch Trailer
+      </a>
+    </div>
+  );
+
+  // Kolom tabel
   const columns = [
     {
       title: "No",
       key: "no",
       align: "center",
-      render: (text, record, index) => index + 1, // Using index for numbering
+      render: (_, __, index) => index + 1,
     },
-    {
-      title: "Movies",
-      dataIndex: "movies",
-      key: "movies",
-    },
+    { title: "Title", dataIndex: "title", key: "title" },
     {
       title: "Actors",
-      dataIndex: "actors",
       key: "actors",
+      render: (record) =>
+        record.Actors?.map((actor) => actor.name).join(", ") || "N/A",
     },
     {
       title: "Genres",
-      dataIndex: "genres",
+      key: "genres",
+      render: (record) =>
+        record.Genres?.map((genre) => genre.name).join(", ") || "N/A",
     },
     {
       title: "Synopsis",
       dataIndex: "synopsis",
       key: "synopsis",
-      render: (text) => (
-        <div className="synopsis-cell">
-          {text.split("\n").map((line, i) => (
-            <p key={i}>{line}</p>
-          ))}
-        </div>
-      ),
+      render: (text) => <div className="synopsis-cell">{text}</div>,
     },
     {
       title: "Status",
-      dataIndex: "status",
+      dataIndex: "approval_status",
       key: "status",
+      align: "center",
+      render: (status) =>
+        status === 1 ? (
+          <span style={{ color: "green", fontWeight: "bold" }}>Approved</span>
+        ) : (
+          <span style={{ color: "red", fontWeight: "bold" }}>Unapproved</span>
+        ),
     },
     {
-      title: "Action",
-      key: "action",
+      title: "Actions",
+      key: "actions",
       align: "center",
-      render: (text, record) => (
+      render: (_, record) => (
         <Space size="middle">
           <Button
-            type="primary"
             icon={<EditOutlined />}
-            onClick={() => handleApprove(record)} // Trigger the popup
+            onClick={() => handleEdit(record)}
+            className="ant-btn-edit"
           />
           <Button
-            type="danger"
             icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record.key)}
+            onClick={() => handleDelete(record.id)}
+            className="ant-btn-delete"
+          />
+          <Button
+            icon={<CheckOutlined />}
+            onClick={() => handleApprove(record.id)}
+            className="ant-btn-approve"
+            disabled={record.approval_status === 1}
           />
         </Space>
       ),
@@ -108,86 +248,77 @@ const CMSmoviesValidate = () => {
 
   return (
     <div className="movies-validate-page">
-      {/* Filter Section */}
-      <div className="movies-validate-filters">
-        <div className="filter-item">
-          <span>Filtered by: </span>
+      <div className="header">
+        <h2>Validate Movies</h2>
+        <div className="filters">
           <Select
             value={statusFilter}
-            onChange={handleStatusChange}
+            onChange={(value) => setStatusFilter(value)}
             style={{ width: 150 }}
           >
             <Option value="None">None</Option>
-            <Option value="Unapproved">Unapproved</Option>
             <Option value="Approved">Approved</Option>
+            <Option value="Unapproved">Unapproved</Option>
           </Select>
-        </div>
-        <div className="filter-item">
-          <span>Shows: </span>
           <InputNumber
             min={1}
             max={100}
             value={showCount}
-            onChange={handleShowCountChange}
+            onChange={(value) => setShowCount(value)}
           />
         </div>
       </div>
 
-      {/* Table Section */}
       <Table
         columns={columns}
         dataSource={dataSource}
         pagination={{ pageSize: showCount }}
+        rowKey={(record) => record.id}
+        loading={isLoading}
         className="custom-table"
       />
 
-      {/* Movie Approval Popup */}
       <Modal
-        title={null}
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        footer={null} // No default footer
-        width={800} // Set the width of the modal to match the design
+        title="Edit Movie"
+        open={isEditModalOpen}
+        onCancel={() => {
+          setIsEditModalOpen(false);
+          form.resetFields();
+        }}
+        onOk={() => form.submit()}
       >
-        {selectedMovie && (
-          <div className="movie-approval-popup">
-            <div className="popup-header">
-              <Button type="primary" style={{ backgroundColor: "#FF7F50" }}>
-                Approve
-              </Button>
-              <Button type="danger" style={{ marginLeft: "10px" }}>
-                Delete
-              </Button>
-            </div>
-
-            <div className="popup-content">
-              <div className="movie-info">
-                <div className="movie-poster-placeholder"></div> {/* Poster placeholder */}
-                <div className="movie-details">
-                  <h2>{selectedMovie.movies}</h2>
-                  <p>Other titles: {selectedMovie.otherTitles.join(", ")}</p>
-                  <p>Year: {selectedMovie.year}</p>
-                  <p>{selectedMovie.synopsis}</p>
-                  <p>Genres: {selectedMovie.genres}</p>
-                  <p>Rating: {selectedMovie.rating}</p>
-                  <p>Availability: {selectedMovie.availability}</p>
-                </div>
-              </div>
-
-              <div className="actors-list">
-                {selectedMovie.actorsList.map((actor, index) => (
-                  <div key={index} className="actor-item">
-                    {actor}
-                  </div>
-                ))}
-              </div>
-
-              <div className="trailer-placeholder">
-                {/* Placeholder for trailer */}
-              </div>
-            </div>
-          </div>
-        )}
+        <Form form={form} layout="vertical" onFinish={handleSaveEdit}>
+          <Form.Item label="Title" name="title" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item label="Rating" name="rating" rules={[{ required: true }]}>
+            <InputNumber min={1} max={10} />
+          </Form.Item>
+          <Form.Item label="Synopsis" name="synopsis">
+            <Input.TextArea rows={4} />
+          </Form.Item>
+          <Form.Item label="Release Date" name="release_date">
+            <Input placeholder="YYYY-MM-DD" />
+          </Form.Item>
+          <Form.Item label="Director" name="director">
+            <Input />
+          </Form.Item>
+          <Form.Item label="Country" name="country">
+            <Input />
+          </Form.Item>
+          <Form.Item label="Actors" name="actors">
+            <Input.TextArea placeholder="Comma-separated actors" />
+          </Form.Item>
+          <Form.Item label="Genres" name="genres">
+            <Input.TextArea placeholder="Comma-separated genres" />
+          </Form.Item>
+          <Form.Item label="Poster URL" name="poster_url">
+            <Input />
+          </Form.Item>
+          <Form.Item label="Trailer URL" name="trailer_url">
+            <Input />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

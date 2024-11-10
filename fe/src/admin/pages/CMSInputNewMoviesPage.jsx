@@ -60,6 +60,20 @@ const CMSInputNewMovies = () => {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const fetchApprovedMovies = async () => {
+      try {
+        const response = await axios.get(`${URL}/movies/approved`);
+        setMovies(response.data);
+      } catch (error) {
+        console.error("Error fetching approved movies:", error);
+        message.error("Failed to fetch approved movies");
+      }
+    };
+  
+    fetchApprovedMovies();
+  }, []);
+  
   // Autocomplete for Actors
   const handleActorSearch = async (input) => {
     if (input.length > 0) {
