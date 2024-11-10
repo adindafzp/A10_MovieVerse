@@ -12,9 +12,12 @@ Movie.init(
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
+      allowNull: false,
     },
     rating: {
-      type: DataTypes.DOUBLE, 
+      type: DataTypes.DOUBLE,
+      allowNull: false,
+      defaultValue: 0,
     },    
     title: {
       type: DataTypes.TEXT,

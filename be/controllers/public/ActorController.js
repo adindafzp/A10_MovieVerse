@@ -4,10 +4,16 @@ const { Actor, Movie, Series } = require("../../models/index");
 class ActorControllerPublic {
   static async getAll(req, res, next) {
     try {
-      const { page = 1, limit = 10 } = req.query;
+      const { page = 1, limit = 10, search = "" } = req.query;
       const offset = (page - 1) * limit;
 
+      // Filter pencarian case-insensitive menggunakan MySQL
       const { count, rows: actors } = await Actor.findAndCountAll({
+        where: {
+          name: {
+            [Op.like]: `%${search}%`, // Menggunakan Op.like untuk pencarian case-insensitive di MySQL
+          },
+        },
         offset: parseInt(offset),
         limit: parseInt(limit),
       });
@@ -33,9 +39,7 @@ class ActorControllerPublic {
         include: [
           {
             model: Movie,
-          },
-          {
-            model: Series,
+            as: "Movies",
           },
         ],
       });

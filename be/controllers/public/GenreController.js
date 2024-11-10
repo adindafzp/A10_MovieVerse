@@ -1,106 +1,63 @@
-// const { Op } = require("sequelize");
-// const { Genre, Movie } = require("../../models"); // Pastikan model Genre dan Movie diimpor
-
-// class GenreControllerPublic {
-//   // Mengambil semua genre dengan pagination
-//   static async getAll(req, res, next) {
-//     try {
-//       const { page = 1, limit = 10 } = req.query;
-//       const offset = (page - 1) * limit;
-
-//       const { count, rows: genres } = await Genre.findAndCountAll({
-//         offset: parseInt(offset),
-//         limit: parseInt(limit),
-//       });
-
-//       return res.json({
-//         genres,
-//         meta: {
-//           totalItems: count,
-//           currentPage: parseInt(page),
-//           totalPages: Math.ceil(count / limit),
-//           itemsPerPage: parseInt(limit),
-//         },
-//       });
-//     } catch (error) {
-//       next(error);
-//     }
-//   }
-
-//   // Mengambil genre berdasarkan ID
-//   static async getById(req, res, next) {
-//     try {
-//       const genre = await Genre.findOne({
-//         where: { id: req.params.id },
-//         include: [
-//           {
-//             model: Movie, // Mengaitkan dengan model Movie jika perlu
-//           },
-//         ],
-//       });
-
-//       if (!genre) {
-//         return res.status(404).json({ message: "Genre not found" });
-//       }
-
-//       return res.json({ genre });
-//     } catch (error) {
-//       next(error);
-//     }
-//   }
-// }
-
-// module.exports = GenreControllerPublic;
-
 const { Op } = require("sequelize");
 const { Genre, Movie } = require("../../models");
 
 class GenreControllerPublic {
   // Mengambil semua genre dengan pagination
+  // static async getAll(req, res, next) {
+  //   try {
+  //     const { page = 1, limit = 10 } = req.query;
+  //     const offset = (page - 1) * limit;
+
+  //     const { count, rows: genres } = await Genre.findAndCountAll({
+  //       offset: parseInt(offset),
+  //       limit: parseInt(limit),
+  //     });
+
+  //     return res.json({
+  //       genres,
+  //       meta: {
+  //         totalItems: count,
+  //         currentPage: parseInt(page),
+  //         totalPages: Math.ceil(count / limit),
+  //         itemsPerPage: parseInt(limit),
+  //       },
+  //     });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // }
+
   static async getAll(req, res, next) {
     try {
-      const { page = 1, limit = 10 } = req.query;
-      const offset = (page - 1) * limit;
-
-      const { count, rows: genres } = await Genre.findAndCountAll({
-        offset: parseInt(offset),
-        limit: parseInt(limit),
+      // Mengambil semua genre tanpa pagination
+      const genres = await Genre.findAll({
+        attributes: ['id', 'name'],
       });
+  
+      return res.json({ genres });
+    } catch (error) {
+      next(error);
+    }
+  }  
 
-      return res.json({
-        genres,
-        meta: {
-          totalItems: count,
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(count / limit),
-          itemsPerPage: parseInt(limit),
-        },
+  static async getById(req, res, next) {
+    try {
+      const genreId = req.params.id;
+      if (isNaN(genreId)) {
+        return res.status(400).json({ message: "Invalid genre ID" });
+      }
+      const genre = await Genre.findOne({
+        where: { id: genreId },
+        include: [{ model: Movie }],
       });
+      if (!genre) {
+        return res.status(404).json({ message: "Genre not found" });
+      }
+      return res.json({ genre });
     } catch (error) {
       next(error);
     }
   }
-
-  // Mengambil genre berdasarkan ID dengan asosiasi Movies
-// GenreController
-static async getById(req, res, next) {
-  try {
-    const genreId = req.params.id;
-    if (isNaN(genreId)) {
-      return res.status(400).json({ message: "Invalid genre ID" });
-    }
-    const genre = await Genre.findOne({
-      where: { id: genreId },
-      include: [{ model: Movie }],
-    });
-    if (!genre) {
-      return res.status(404).json({ message: "Genre not found" });
-    }
-    return res.json({ genre });
-  } catch (error) {
-    next(error);
-  }
-}
   
   // Mengambil semua genre tanpa pagination untuk filter
   static async getAllForFilter(req, res) {
