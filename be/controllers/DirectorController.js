@@ -12,7 +12,6 @@ class DirectorController {
     }
   }
 
-<<<<<<< HEAD
   // Get all directors, including related country data
   static async getAll(req, res) {
     try {
@@ -24,27 +23,6 @@ class DirectorController {
       return res.status(500).json({ error: error.message });
     }
   }
-=======
-    // Get all directors
-    static async getAll(req, res) {
-        try {
-          const { search = "" } = req.query;
-      
-          const directors = await Director.findAll({
-            where: {
-              name: {
-                [Op.like]: `%${search}%`,
-              },
-            },
-            attributes: ["id", "name"], // Hanya mengambil id dan name
-          });
-      
-          return res.status(200).json(directors);
-        } catch (error) {
-          return res.status(500).json({ error: error.message });
-        }
-      }      
->>>>>>> c472b94 (input new movies/add movies by admin)
 
   // Get a director by ID, including related country data
   static async getById(req, res) {
