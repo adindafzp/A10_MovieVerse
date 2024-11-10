@@ -8,5 +8,6 @@ router.get("/", MovieController.getAll);
 router.get("/:id", MovieController.getById);
 router.put("/:id", MovieController.update);
 router.delete("/:id", MovieController.delete);
+router.get("/approved", MovieController.getAllApproved);
 
 module.exports = router;
