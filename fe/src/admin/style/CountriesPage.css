@@ -22,16 +22,6 @@
   margin-bottom: 20px;
 }
 
-.ant-btn-primary {
-  background-color: var(--secondary-color);
-  border-color: var(--secondary-color);
-}
-
-.ant-btn-primary:hover {
-  background-color: var(--secondary-color);
-  border-color: var(--secondary-color);
-}
-
 .custom-table .ant-table-thead > tr > th {
   text-align: center;
 }
@@ -43,3 +33,39 @@
 .ant-form-item-label > label {
   font-family: 'Poppins', sans-serif;
 }
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.custom-table .ant-table-thead > tr > th {
+  text-align: center;
+}
+
+  /* Styling tombol */
+  .ant-btn:focus {
+    outline: 2px solid var(--secondary-color);
+    box-shadow: 0px 0px 5px rgba(220, 53, 69, 0.5);
+  }
+  
+  .ant-btn-edit,
+  .ant-btn-delete,
+  .ant-btn-new-country {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: #ffffff;
+  }
+  
+  .ant-btn-new-country:hover {
+    background-color: #ffffff !important;
+    border-color: var(--secondary-color) !important;
+    color: var(--secondary-color) !important;
+  }

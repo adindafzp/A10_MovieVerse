@@ -27,6 +27,10 @@ const CMSmoviesValidate = () => {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState(null);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: showCount,
+  });
 
   // Fetch movies data from backend
   useEffect(() => {
@@ -54,6 +58,7 @@ const CMSmoviesValidate = () => {
 
   const handleShowCountChange = (value) => {
     setShowCount(value);
+    setPagination({ ...pagination, pageSize: value, current: 1 }); // Reset ke halaman 1 agar data ditampilkan dengan benar
   };
 
   // Aksi: Edit, Delete, Approve
@@ -61,10 +66,12 @@ const CMSmoviesValidate = () => {
     try {
       const response = await axios.get(`${URL}/admin/movie/${record.id}`);
       const movieData = response.data;
-  
-      const actorsList = movieData.Actors?.map((actor) => actor.name).join(", ") || "";
-      const genresList = movieData.Genres?.map((genre) => genre.name).join(", ") || "";
-  
+
+      const actorsList =
+        movieData.Actors?.map((actor) => actor.name).join(", ") || "";
+      const genresList =
+        movieData.Genres?.map((genre) => genre.name).join(", ") || "";
+
       const formData = {
         title: movieData.title,
         rating: movieData.rating,
@@ -77,7 +84,7 @@ const CMSmoviesValidate = () => {
         poster_url: movieData.poster_url,
         trailer_url: movieData.trailer_url,
       };
-  
+
       form.setFieldsValue(formData);
       setEditingMovie(movieData);
       setIsEditModalOpen(true);
@@ -85,7 +92,7 @@ const CMSmoviesValidate = () => {
       message.error("Failed to fetch movie details");
       console.error("Failed to fetch movie details:", error);
     }
-  };  
+  };
 
   const handleSaveEdit = async (values) => {
     try {
@@ -186,7 +193,8 @@ const CMSmoviesValidate = () => {
       title: "No",
       key: "no",
       align: "center",
-      render: (_, __, index) => index + 1,
+      render: (text, record, index) =>
+        index + 1 + (pagination.current - 1) * pagination.pageSize,
     },
     { title: "Title", dataIndex: "title", key: "title" },
     {
@@ -272,7 +280,14 @@ const CMSmoviesValidate = () => {
       <Table
         columns={columns}
         dataSource={dataSource}
-        pagination={{ pageSize: showCount }}
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          onChange: (page, pageSize) => {
+            setPagination({ current: page, pageSize });
+            setShowCount(pageSize); // Sinkronkan nilai showCount dengan pageSize yang dipilih
+          },
+        }}
         rowKey={(record) => record.id}
         loading={isLoading}
         className="custom-table"
