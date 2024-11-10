@@ -1,37 +1,35 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Space, Radio } from 'antd';
+import { Table, Button, Modal, Form, Input, Space, message } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import axios from 'axios'; // Tambahkan axios untuk HTTP request
-import "../style/CountriesPage.css";  // Jangan lupa buat file CSS-nya
+import axios from 'axios';
+import "../style/CountriesPage.css";
 
 const CMSCountries = () => {
   const [countriesData, setCountriesData] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCountry, setEditingCountry] = useState(null);
-  const [loading, setLoading] = useState(true); // Tambahkan loading state
+  const [loading, setLoading] = useState(true);
   const [form] = Form.useForm();
 
-// Fetch data dari backend
-useEffect(() => {
+  // Fetch data dari backend
+  useEffect(() => {
+    fetchCountries();
+  }, []);
+
   const fetchCountries = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/cms/countries');
-      setCountriesData(
-        response.data.map((country) => ({
-          key: country.country_id,  // Gunakan country_id sebagai key
-          country: country.name,  // Tampilkan nama negara
-          isDefault: country.is_default === 1 ? true : false  // Konversi flag is_default
-        }))
-      );
-      setLoading(false);  // Set loading ke false setelah data diterima
+      const response = await axios.get('http://localhost:3000/api/admin/country'); // Pastikan endpoint sesuai dengan backend Anda
+      setCountriesData(response.data.map(country => ({
+        key: country.countryId,
+        country: country.name,
+      })));
+      setLoading(false);
     } catch (error) {
-      console.error('Error fetching country', error);
-      setLoading(false);  // Set loading ke false jika ada error
+      console.error('Error fetching countries:', error);
+      message.error("Failed to fetch countries");
+      setLoading(false);
     }
   };
-
-  fetchCountries();  // Memanggil fungsi fetch
-}, []);
 
   const handleEdit = (record) => {
     setEditingCountry(record);
@@ -39,35 +37,36 @@ useEffect(() => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = (key) => {
-    setCountriesData(countriesData.filter(country => country.key !== key));
+  const handleDelete = async (countryId) => {
+    try {
+      await axios.delete(`http://localhost:3000/api/admin/country/${countryId}`);
+      message.success("Country deleted successfully");
+      fetchCountries(); // Refresh data setelah penghapusan
+    } catch (error) {
+      console.error('Error deleting country:', error);
+      message.error("Failed to delete country");
+    }
   };
 
-  const handleSave = (values) => {
-    // Jika ada country default, hapus flag default pada semua negara
-    if (values.isDefault) {
-      setCountriesData(countriesData.map(country => ({
-        ...country,
-        isDefault: false,
-      })));
+  const handleSave = async (values) => {
+    try {
+      if (editingCountry) {
+        // Update country
+        await axios.put(`http://localhost:3000/api/admin/country/${editingCountry.key}`, { name: values.country });
+        message.success("Country updated successfully");
+      } else {
+        // Create new country
+        await axios.post('http://localhost:3000/api/admin/country', { name: values.country });
+        message.success("Country added successfully");
+      }
+      fetchCountries(); // Refresh data setelah menyimpan
+      setIsModalOpen(false);
+      setEditingCountry(null);
+      form.resetFields();
+    } catch (error) {
+      console.error('Error saving country:', error);
+      message.error("Failed to save country");
     }
-
-    if (editingCountry) {
-      setCountriesData(
-        countriesData.map(country =>
-          country.key === editingCountry.key ? { ...country, ...values } : country
-        )
-      );
-    } else {
-      const newCountry = {
-        key: `${countriesData.length + 1}`,
-        ...values,
-      };
-      setCountriesData([...countriesData, newCountry]);
-    }
-    setIsModalOpen(false);
-    setEditingCountry(null);
-    form.resetFields();
   };
 
   const handleAdd = () => {
@@ -81,19 +80,12 @@ useEffect(() => {
       title: 'No',
       key: 'no',
       align: 'center',
-      render: (text, record, index) => index + 1, // Menggunakan index untuk nomor
+      render: (text, record, index) => index + 1,
     },
     {
       title: 'Country',
       dataIndex: 'country',
       key: 'country',
-    },
-    {
-      title: 'Default',
-      dataIndex: 'isDefault',
-      key: 'isDefault',
-      align: 'center',
-      render: (isDefault) => (isDefault ? '✔' : ''),
     },
     {
       title: 'Actions',
@@ -137,16 +129,6 @@ useEffect(() => {
             rules={[{ required: true, message: 'Please input the country name!' }]}
           >
             <Input />
-          </Form.Item>
-          <Form.Item
-            label="Set as Default"
-            name="isDefault"
-            valuePropName="checked"
-          >
-            <Radio.Group>
-              <Radio value={true}>Yes</Radio>
-              <Radio value={false}>No</Radio>
-            </Radio.Group>
           </Form.Item>
         </Form>
       </Modal>
