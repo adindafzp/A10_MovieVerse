@@ -3,7 +3,6 @@ const Director = require("./Director");
 const Movie = require("./Movie");
 const MovieActor = require("./MovieActor");
 const MovieVideo = require("./MovieVideo");
-const Series = require("./Series");
 const Genre = require('./Genre');
 const MovieGenre = require('./MovieGenre'); 
 const Country = require('./Country');
@@ -12,11 +11,9 @@ const User = require('./User'); // Import User jika belum ada
 
 // Define associations in one place
 
-// Relasi Director dengan Movie dan Series
+// Relasi Director dengan Movie
 Director.hasMany(Movie, { foreignKey: "directorId" });
-Director.hasMany(Series, { foreignKey: "directorId" });
 Movie.belongsTo(Director, { foreignKey: "directorId" });
-Series.belongsTo(Director, { foreignKey: "directorId" });
 
 // Relasi Movie dengan MovieVideo (One-to-Many)
 Movie.hasMany(MovieVideo, { foreignKey: "movieId" });
@@ -45,7 +42,6 @@ Review.belongsTo(User, { foreignKey: "userId" });
 module.exports = { 
   Director, 
   Movie, 
-  Series, 
   MovieVideo, 
   Actor, 
   MovieActor, 

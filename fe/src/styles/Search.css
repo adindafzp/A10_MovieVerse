@@ -2,6 +2,7 @@
   font-family: "Poppins", sans-serif;
 }
 
+/* Variabel Root */
 :root {
   --primary-color: #f6f8fd;
   --secondary-color: #dc3545;
@@ -10,15 +11,19 @@
   --navbar-color-text: #000000;
 }
 
+/* Main Content */
 .main-content {
   padding: 20px;
 }
 
+/* Search Result Page */
 .search-result-page {
-  padding-top: 0px;
-  color: #fff;
+  padding: 0px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
+/* Search Field */
 .search-field {
   border: 2px solid var(--primary-color);
   padding: 12px;
@@ -26,6 +31,8 @@
   background-color: transparent;
   color: #fff;
   transition: border 0.3s ease, box-shadow 0.3s ease;
+  width: 100%;
+  max-width: 100%;
 }
 
 .search-field::placeholder {
@@ -45,11 +52,13 @@
   box-shadow: none;
 }
 
+/* Filter Sidebar */
 .filter-sidebar {
-  height: auto; /* Sesuaikan tinggi agar tidak terlalu panjang */
+  height: auto;
   padding: 15px;
   border-radius: 10px;
   background-color: #2e2e2e;
+  max-width: 100%;
 }
 
 .filter-sidebar h5 {
@@ -93,6 +102,7 @@
   border-radius: 5px;
 }
 
+/* Movie Card */
 .movie-card,
 .celeb-card {
   border-radius: 10px;
@@ -125,6 +135,72 @@
   margin-bottom: 10px;
 }
 
+/* Warning Text */
 .text-warning {
   font-size: 18px;
+}
+
+/* Filter Button */
+.filter-button {
+  width: 100%;
+  padding: 10px;
+  font-weight: bold;
+  border-radius: 5px;
+}
+
+/* Submit Button */
+.submit-button {
+  background-color: var(--secondary-color);
+  color: #fff;
+  border: none;
+}
+
+.submit-button:hover {
+  background-color: #b32a38;
+}
+
+/* Clear Button */
+.clear-button {
+  background-color: var(--secondary-color);
+  color: #fff;
+}
+
+.clear-button:hover {
+  background-color: #b32a38;
+  color: #fff;
+}
+
+/* Responsif untuk layar kecil */
+@media (max-width: 576px) {
+  .movie-list-search {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Responsif untuk tablet */
+@media (min-width: 577px) and (max-width: 1024px) {
+  .movie-list-search {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Responsif untuk desktop */
+@media (min-width: 1025px) {
+  .movie-list-search {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+/* Responsif untuk layar kecil */
+@media (max-width: 768px) {
+  .movie-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Responsif untuk tablet */
+@media (min-width: 769px) and (max-width: 1200px) {
+  .movie-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

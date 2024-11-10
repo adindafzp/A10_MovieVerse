@@ -3,7 +3,7 @@ const express = require("express");
 const MovieController = require("../controllers/MovieController");
 const router = express.Router();
 
-router.post("/", MovieController.create);
+router.post("/add", MovieController.create);
 router.get("/", MovieController.getAll);
 router.get("/:id", MovieController.getById);
 router.put("/:id", MovieController.update);

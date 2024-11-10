@@ -12,9 +12,12 @@ Movie.init(
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
+      allowNull: false,
     },
     rating: {
-      type: DataTypes.DOUBLE, 
+      type: DataTypes.DOUBLE,
+      allowNull: false,
+      defaultValue: 0,
     },    
     title: {
       type: DataTypes.TEXT,
@@ -53,10 +56,11 @@ Movie.init(
       allowNull: false,
     },
     release_date: {
-      type: "TIMESTAMP",
-      defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+      type: Sequelize.DATEONLY,
+      defaultValue: Sequelize.literal("CURRENT_DATE"),
       allowNull: false,
     },
+        
     is_popular: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,

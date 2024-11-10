@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Table, Button, Select, InputNumber, message } from "antd";
+import { Table, Button, Select, InputNumber, message, Space } from "antd";
+import { DeleteOutlined, CheckOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { URL } from "../../utils";
 import "../style/CommentsPage.css";
@@ -9,7 +10,6 @@ const { Option } = Select;
 const CMSComments = () => {
   const [statusFilter, setStatusFilter] = useState("None");
   const [showCount, setShowCount] = useState(10);
-  const [selectedRows, setSelectedRows] = useState([]);
   const [dataSource, setDataSource] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -41,67 +41,50 @@ const CMSComments = () => {
     setShowCount(value);
   };
 
-  // Approve selected comments
-  const handleApprove = async () => {
+  // Approve a single comment by id
+  const handleApprove = async (commentId) => {
     try {
-      await Promise.all(
-        selectedRows.map(async (commentId) => {
-          await axios.put(`${URL}/reviews/${commentId}/approve`);
-        })
-      );
+      await axios.put(`${URL}/reviews/${commentId}/approve`);
       setDataSource((prevDataSource) =>
         prevDataSource.map((comment) =>
-          selectedRows.includes(comment.id)
+          comment.id === commentId
             ? { ...comment, status: "Approved" }
             : comment
         )
       );
-      message.success("Selected comments approved successfully");
-      setSelectedRows([]);
+      message.success("Comment approved successfully");
     } catch (error) {
-      message.error("Failed to approve comments");
-      console.error("Failed to approve comments:", error);
+      message.error("Failed to approve comment");
+      console.error("Failed to approve comment:", error);
     }
   };
 
-  // Delete selected comments
-  const handleDelete = async () => {
+  // Delete a single comment by id
+  const handleDeleteSingle = async (commentId) => {
     try {
-      await Promise.all(
-        selectedRows.map(async (commentId) => {
-          await axios.delete(`${URL}/reviews/${commentId}`);
-        })
-      );
+      await axios.delete(`${URL}/reviews/${commentId}`);
       setDataSource((prevDataSource) =>
-        prevDataSource.filter((comment) => !selectedRows.includes(comment.id))
+        prevDataSource.filter((comment) => comment.id !== commentId)
       );
-      message.success("Selected comments deleted successfully");
-      setSelectedRows([]);
+      message.success("Comment deleted successfully");
     } catch (error) {
-      message.error("Failed to delete comments");
-      console.error("Failed to delete comments:", error);
+      message.error("Failed to delete comment");
+      console.error("Failed to delete comment:", error);
     }
-  };
-
-  // Update selected rows
-  const onSelectChange = (selectedRowKeys) => {
-    setSelectedRows(selectedRowKeys);
-  };
-
-  // Row selection configuration
-  const rowSelection = {
-    selectedRowKeys: selectedRows,
-    onChange: onSelectChange,
-    preserveSelectedRowKeys: true,
   };
 
   // Define table columns with rating formatted as x/10
   const columns = [
     {
+      title: "No",
+      key: "no",
+      align: "center",
+      render: (text, record, index) => index + 1,
+    },
+    {
       title: "Username",
       dataIndex: ["User", "username"],
       key: "username",
-      align: "center",
     },
     {
       title: "Rate",
@@ -114,13 +97,11 @@ const CMSComments = () => {
       title: "Movie",
       dataIndex: ["Movie", "title"],
       key: "movie",
-      align: "center",
     },
     {
       title: "Comments",
       dataIndex: "content",
       key: "content",
-      align: "center",
       render: (text) => (
         <div className="comment-cell">
           {text.split("\n").map((line, i) => (
@@ -134,6 +115,42 @@ const CMSComments = () => {
       dataIndex: "status",
       key: "status",
       align: "center",
+      render: (status) =>
+        status === "Approved" ? (
+          <span style={{ color: "green", fontWeight: "bold" }}>Approved</span>
+        ) : (
+          <span style={{ color: "red", fontWeight: "bold" }}>Unapproved</span>
+        ),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      align: "center",
+      render: (_, record) => (
+        <Space size="middle">
+          <Button
+            icon={<CheckOutlined />}
+            onClick={() => handleApprove(record.id)}
+            disabled={record.status === "Approved"}
+            style={{
+              backgroundColor:
+                record.status === "Approved" ? "#d3d3d3" : "#4CAF50",
+              color: "white",
+              border: "none",
+            }}
+          />
+          <Button
+          className="ant-btn-delete"
+            icon={<DeleteOutlined />}
+            onClick={() => handleDeleteSingle(record.id)}
+            style={{
+              backgroundColor: "#f44336",
+              color: "white",
+              border: "none",
+            }}
+          />
+        </Space>
+      ),
     },
   ];
 
@@ -144,34 +161,36 @@ const CMSComments = () => {
 
   return (
     <div className="comments-page">
-      {/* Filter Section */}
-      <div className="comments-filters">
-        <div className="filter-item">
-          <span>Filtered by: </span>
-          <Select
-            value={statusFilter}
-            onChange={handleStatusChange}
-            style={{ width: 150 }}
-          >
-            <Option value="None">None</Option>
-            <Option value="Approved">Approved</Option>
-            <Option value="Unapproved">Unapproved</Option>
-          </Select>
-        </div>
-        <div className="filter-item">
-          <span>Shows: </span>
-          <InputNumber
-            min={1}
-            max={100}
-            value={showCount}
-            onChange={handleShowCountChange}
-          />
+      <div className="user-header">
+        <h2>Comment Management</h2>
+        {/* Filter Section */}
+        <div className="comments-filters">
+          <div className="filter-item">
+            <span>Filtered by: </span>
+            <Select
+              value={statusFilter}
+              onChange={handleStatusChange}
+              style={{ width: 150 }}
+            >
+              <Option value="None">None</Option>
+              <Option value="Approved">Approved</Option>
+              <Option value="Unapproved">Unapproved</Option>
+            </Select>
+          </div>
+          <div className="filter-item">
+            <span>Shows: </span>
+            <InputNumber
+              min={1}
+              max={100}
+              value={showCount}
+              onChange={handleShowCountChange}
+            />
+          </div>
         </div>
       </div>
 
       {/* Table Section */}
       <Table
-        rowSelection={rowSelection}
         columns={columns}
         dataSource={filteredData}
         pagination={{ pageSize: showCount }}
@@ -179,24 +198,6 @@ const CMSComments = () => {
         className="custom-table"
         loading={isLoading}
       />
-
-      {/* Action Buttons */}
-      <div className="comments-actions">
-        <Button
-          className="ant-btn-approve"
-          onClick={handleApprove}
-          disabled={selectedRows.length === 0}
-        >
-          Approve
-        </Button>
-        <Button
-          className="ant-btn-delete"
-          onClick={handleDelete}
-          disabled={selectedRows.length === 0}
-        >
-          Delete
-        </Button>
-      </div>
     </div>
   );
 };

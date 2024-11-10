@@ -3,32 +3,20 @@ const { Country, Movie } = require("../../models");
 
 class CountryControllerPublic {
   // Mengambil semua negara dengan pagination
-  static async getAll(req, res, next) {
-    try {
-      const { page = 1, limit = 10 } = req.query;
-      const offset = (page - 1) * limit;
+// Mengambil semua negara tanpa limit
+static async getAll(req, res) {
+  try {
+    const countries = await Country.findAll({
+      attributes: ['countryId', 'name'],
+    });
 
-      const { count, rows: countries } = await Country.findAndCountAll({
-        offset: parseInt(offset),
-        limit: parseInt(limit),
-      });
-
-      return res.json({
-        countries,
-        meta: {
-          totalItems: count,
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(count / limit),
-          itemsPerPage: parseInt(limit),
-        },
-      });
-    } catch (error) {
-      next(error);
-    }
+    return res.json({ countries });
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong!" });
   }
+}
 
-  // Mengambil negara berdasarkan ID
-// CountryController
+
 static async getById(req, res, next) {
   try {
     const countryId = req.params.id;

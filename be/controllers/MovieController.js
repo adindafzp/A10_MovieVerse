@@ -3,14 +3,17 @@ const Movie = require("../models/Movie");
 
 class MovieController {
   // Create a new movie
-  static async create(req, res) {
-    try {
-      const movie = await Movie.create(req.body);
-      return res.status(201).json(movie);
-    } catch (error) {
-      return res.status(500).json({ error: error.message });
-    }
+// controllers/MovieController.js
+static async create(req, res) {
+  try {
+    console.log("Data received in create movie:", req.body);
+    const movie = await Movie.create(req.body);
+    return res.status(201).json(movie);
+  } catch (error) {
+    console.error("Error in create movie:", error);
+    return res.status(500).json({ error: error.message });
   }
+}
 
   // Get all movies
   static async getAll(req, res) {

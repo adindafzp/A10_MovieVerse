@@ -15,12 +15,22 @@ class DirectorController {
     // Get all directors
     static async getAll(req, res) {
         try {
-            const directors = await Director.findAll();
-            return res.status(200).json(directors);
+          const { search = "" } = req.query;
+      
+          const directors = await Director.findAll({
+            where: {
+              name: {
+                [Op.like]: `%${search}%`,
+              },
+            },
+            attributes: ["id", "name"], // Hanya mengambil id dan name
+          });
+      
+          return res.status(200).json(directors);
         } catch (error) {
-            return res.status(500).json({ error: error.message });
+          return res.status(500).json({ error: error.message });
         }
-    }
+      }      
 
     // Get a director by ID
     static async getById(req, res) {
