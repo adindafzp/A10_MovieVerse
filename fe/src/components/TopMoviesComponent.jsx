@@ -14,14 +14,18 @@ const TopRatedMovies = () => {
 
   useEffect(() => {
     const fetchMovies = async () => {
-      const url = URL + "/movies/toprated"; // Ubah ke endpoint top-rated dari backend
+      const url = URL + "/movies/toprated"; // Endpoint top-rated dari backend
       try {
         const response = await fetch(url);
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        setMovies(data);
+        
+        // Filter tambahan di frontend (opsional, jika diperlukan)
+        const approvedMovies = data.filter((movie) => movie.approval_status === 1);
+        
+        setMovies(approvedMovies);
         setLoading(false);
       } catch (error) {
         setError(error);

@@ -1,6 +1,7 @@
+// models/MovieVideo.js
 const { Model, DataTypes } = require("sequelize");
 const sequelize = require("../library/database");
-const Movie = require("./Movie");
+const Movie = require("./Movie"); 
 
 class MovieVideo extends Model {}
 
@@ -21,13 +22,10 @@ MovieVideo.init(
     },
     movieId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
       references: {
         model: Movie,
         key: "id",
       },
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
     },
   },
   {
@@ -37,7 +35,5 @@ MovieVideo.init(
     timestamps: false,
   }
 );
-
-
 
 module.exports = MovieVideo;
