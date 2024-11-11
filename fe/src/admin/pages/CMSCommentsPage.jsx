@@ -12,6 +12,10 @@ const CMSComments = () => {
   const [showCount, setShowCount] = useState(10);
   const [dataSource, setDataSource] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: showCount,
+  });
 
   // Fetch comments data from backend
   useEffect(() => {
@@ -39,7 +43,8 @@ const CMSComments = () => {
   // Handle show count change
   const handleShowCountChange = (value) => {
     setShowCount(value);
-  };
+    setPagination({ ...pagination, pageSize: value, current: 1 });
+  };  
 
   // Approve a single comment by id
   const handleApprove = async (commentId) => {
@@ -79,7 +84,8 @@ const CMSComments = () => {
       title: "No",
       key: "no",
       align: "center",
-      render: (text, record, index) => index + 1,
+      render: (text, record, index) =>
+        index + 1 + (pagination.current - 1) * pagination.pageSize,
     },
     {
       title: "Username",
@@ -140,7 +146,7 @@ const CMSComments = () => {
             }}
           />
           <Button
-          className="ant-btn-delete"
+            className="ant-btn-delete"
             icon={<DeleteOutlined />}
             onClick={() => handleDeleteSingle(record.id)}
             style={{
@@ -193,7 +199,14 @@ const CMSComments = () => {
       <Table
         columns={columns}
         dataSource={filteredData}
-        pagination={{ pageSize: showCount }}
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          onChange: (page, pageSize) => {
+            setPagination({ current: page, pageSize });
+            setShowCount(pageSize);
+          },
+        }}
         rowKey={(record) => record.id}
         className="custom-table"
         loading={isLoading}

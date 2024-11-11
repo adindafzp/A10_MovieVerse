@@ -1,5 +1,5 @@
 import { Menu } from "antd";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   HomeOutlined,
   VideoCameraOutlined,
@@ -9,19 +9,24 @@ import {
   UserOutlined,
   CommentOutlined,
   LogoutOutlined,
-  TeamOutlined, // Icon untuk Director
+  TeamOutlined,
 } from "@ant-design/icons";
 
 const MenuList = ({ darkTheme }) => {
+  const navigate = useNavigate();
+
+  // Fungsi handleLogout
+  const handleLogout = () => {
+    localStorage.removeItem("token"); // Hapus token dari localStorage
+    navigate("/login"); // Arahkan ke halaman login
+  };
+
   return (
     <Menu
       theme={darkTheme ? "dark" : "light"}
       mode="inline"
       className="menuCMS"
     >
-      <Menu.Item key="home" icon={<HomeOutlined />}>
-        <Link to="/">Home</Link>
-      </Menu.Item>
       <Menu.SubMenu key="movies" icon={<VideoCameraOutlined />} title="Movies">
         <Menu.Item key="validateMovies">
           <Link to="/cms/movies-approved">Validate</Link>
@@ -32,9 +37,6 @@ const MenuList = ({ darkTheme }) => {
       </Menu.SubMenu>
       <Menu.Item key="countries" icon={<FlagOutlined />}>
         <Link to="/cms/countries">Countries</Link>
-      </Menu.Item>
-      <Menu.Item key="awards" icon={<TrophyOutlined />}>
-        <Link to="/cms/awards">Awards</Link>
       </Menu.Item>
       <Menu.Item key="genres" icon={<TagsOutlined />}>
         <Link to="/cms/genres">Genres</Link>
@@ -51,7 +53,11 @@ const MenuList = ({ darkTheme }) => {
       <Menu.Item key="users" icon={<UserOutlined />}>
         <Link to="/cms/users">Users</Link>
       </Menu.Item>
-      <Menu.Item key="logout" icon={<LogoutOutlined />}>
+      <Menu.Item
+        key="logout"
+        icon={<LogoutOutlined />}
+        onClick={handleLogout} // Tambahkan handler logout di sini
+      >
         Logout
       </Menu.Item>
     </Menu>

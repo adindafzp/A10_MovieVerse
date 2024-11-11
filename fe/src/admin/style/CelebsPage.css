@@ -22,16 +22,6 @@
     margin-bottom: 20px;
   }
   
-  .ant-btn-primary {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
-  }
-  
-  .ant-btn-primary:hover {
-    background-color: var(--secondary-color);
-    border-color: var(--secondary-color);
-  }
-  
   .custom-table .ant-table-thead > tr > th {
     text-align: center;
   }
@@ -52,3 +42,32 @@
     color: white; /* Ubah warna ikon menjadi putih */
 }
   
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.custom-table .ant-table-thead > tr > th {
+  text-align: center;
+}
+
+.ant-btn-edit,
+.ant-btn-delete,
+.ant-btn-new-actor {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+  color: #ffffff;
+}
+
+.ant-btn-new-actor:hover {
+  background-color: #ffffff !important;
+  border-color: var(--secondary-color) !important;
+  color: var(--secondary-color) !important;
+}

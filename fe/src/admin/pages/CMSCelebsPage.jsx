@@ -1,8 +1,20 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Table, Button, Modal, Form, Input, Space, DatePicker, Select, message, Typography } from 'antd';
-import { EditOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons';
-import axios from 'axios';
-import moment from 'moment';
+import { useState, useEffect, useMemo } from "react";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Input,
+  Space,
+  DatePicker,
+  Select,
+  message,
+  Typography,
+  InputNumber,
+} from "antd";
+import { EditOutlined, DeleteOutlined, InfoCircleOutlined } from "@ant-design/icons";
+import axios from "axios";
+import moment from "moment";
 import "../style/CelebsPage.css";
 
 const { Text } = Typography;
@@ -14,6 +26,8 @@ const CMSCelebsPage = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [editingActor, setEditingActor] = useState(null);
   const [selectedActor, setSelectedActor] = useState(null);
+  const [showCount, setShowCount] = useState(10);
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -23,7 +37,7 @@ const CMSCelebsPage = () => {
 
   const fetchActors = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/admin/actors');
+      const response = await axios.get("http://localhost:3000/api/admin/actors");
       setActorsData(response.data);
     } catch (error) {
       console.error("Failed to fetch actors:", error);
@@ -33,7 +47,7 @@ const CMSCelebsPage = () => {
 
   const fetchCountries = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/admin/country');
+      const response = await axios.get("http://localhost:3000/api/admin/country");
       setCountries(response.data);
     } catch (error) {
       console.error("Failed to fetch countries:", error);
@@ -78,7 +92,7 @@ const CMSCelebsPage = () => {
         await axios.put(`http://localhost:3000/api/admin/actors/${editingActor.id}`, payload);
         message.success("Actor updated successfully");
       } else {
-        await axios.post('http://localhost:3000/api/admin/actors', payload);
+        await axios.post("http://localhost:3000/api/admin/actors", payload);
         message.success("Actor added successfully");
       }
       fetchActors();
@@ -97,42 +111,49 @@ const CMSCelebsPage = () => {
     setIsModalOpen(true);
   };
 
+  const handleShowCountChange = (value) => {
+    setShowCount(value);
+    setPagination({ ...pagination, pageSize: value });
+  };
+
   const handleShowDetails = (actor) => {
     setSelectedActor(actor);
     setIsDetailModalOpen(true);
   };
 
   const processedData = useMemo(
-    () => actorsData.map((actor, index) => ({
-      key: actor.id,
-      actorName: actor.name,
-      country: actor.Country?.name || 'Unknown',
-      actorData: actor,
-    })),
+    () =>
+      actorsData.map((actor, index) => ({
+        key: actor.id,
+        actorName: actor.name,
+        country: actor.Country?.name || "Unknown",
+        actorData: actor,
+      })),
     [actorsData]
   );
 
   const columns = [
     {
-      title: 'No',
-      key: 'no',
-      align: 'center',
-      render: (text, record, index) => index + 1,
+      title: "No",
+      key: "no",
+      align: "center",
+      render: (text, record, index) =>
+        index + 1 + (pagination.current - 1) * pagination.pageSize,
     },
     {
-      title: 'Actor Name',
-      dataIndex: 'actorName',
-      key: 'actorName',
+      title: "Actor Name",
+      dataIndex: "actorName",
+      key: "actorName",
     },
     {
-      title: 'Country',
-      dataIndex: 'country',
-      key: 'country',
+      title: "Country",
+      dataIndex: "country",
+      key: "country",
     },
     {
-      title: 'Detail Info',
-      key: 'detail',
-      align: 'center',
+      title: "Detail Info",
+      key: "detail",
+      align: "center",
       render: (text, record) => (
         <Button
           icon={<InfoCircleOutlined />}
@@ -143,18 +164,18 @@ const CMSCelebsPage = () => {
       ),
     },
     {
-      title: 'Actions',
-      key: 'actions',
-      align: 'center',
+      title: "Actions",
+      key: "actions",
+      align: "center",
       render: (text, record) => (
         <Space size="middle">
           <Button
-            type="primary"
+            className="ant-btn-edit"
             icon={<EditOutlined />}
             onClick={() => handleEdit(record.actorData)}
           />
           <Button
-            type="danger"
+            className="ant-btn-delete"
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.key)}
           />
@@ -167,81 +188,38 @@ const CMSCelebsPage = () => {
     <div className="actors-page">
       <div className="actors-header">
         <h2>Actors Management</h2>
-        <Button type="primary" onClick={handleAdd}>Add New Actor</Button>
+        <div className="controls">
+          <div className="filter-item">
+            <span>Show:</span>
+            <InputNumber min={1} max={100} value={showCount} onChange={handleShowCountChange} />
+          </div>
+          <Button className="ant-btn-new-actor" onClick={handleAdd}>
+            + New Actor
+          </Button>
+        </div>
       </div>
-      <Table columns={columns} dataSource={processedData} pagination={false} className="custom-table" />
+      <Table
+        columns={columns}
+        dataSource={processedData}
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          onChange: (page, pageSize) => setPagination({ current: page, pageSize }),
+        }}
+        className="custom-table"
+        rowKey={(record) => record.key}
+      />
 
-      {/* Detail Info Modal */}
-      <Modal
-        title="Actor Details"
-        visible={isDetailModalOpen}
-        onCancel={() => setIsDetailModalOpen(false)}
-        footer={<Button onClick={() => setIsDetailModalOpen(false)}>Close</Button>}
-      >
+      <Modal title="Actor Details" visible={isDetailModalOpen} onCancel={() => setIsDetailModalOpen(false)} footer={<Button onClick={() => setIsDetailModalOpen(false)}>Close</Button>}>
         {selectedActor && (
           <>
             <p><strong>Name:</strong> {selectedActor.name}</p>
-            <p><strong>Birthdate:</strong> {selectedActor.birthdate ? moment(selectedActor.birthdate).format("YYYY-MM-DD") : 'N/A'}</p>
-            <p><strong>Country:</strong> {selectedActor.Country?.name || 'Unknown'}</p>
-            <p><strong>Biography:</strong> {selectedActor.biography || 'No biography available'}</p>
-            {selectedActor.image && <img src={selectedActor.image} alt="actor" style={{ width: '100%', marginTop: '10px' }} />}
+            <p><strong>Birthdate:</strong> {selectedActor.birthdate ? moment(selectedActor.birthdate).format("YYYY-MM-DD") : "N/A"}</p>
+            <p><strong>Country:</strong> {selectedActor.Country?.name || "Unknown"}</p>
+            <p><strong>Biography:</strong> {selectedActor.biography || "No biography available"}</p>
+            {selectedActor.image && <img src={selectedActor.image} alt="actor" style={{ width: "100%", marginTop: "10px" }} />}
           </>
         )}
-      </Modal>
-
-      {/* Add/Edit Actor Modal */}
-      <Modal
-        title={editingActor ? `Edit Actor: ${editingActor.name}` : 'Add Actor'}
-        visible={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        onOk={form.submit}
-      >
-        {editingActor && (
-          <div style={{ marginBottom: '20px' }}>
-            <Text type="secondary">Editing actor: {editingActor.name}</Text>
-          </div>
-        )}
-        <Form form={form} layout="vertical" onFinish={handleSave}>
-          <Form.Item
-            label="Actor Name"
-            name="actorName"
-            rules={[{ required: true, message: 'Please input the actor name!' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="Birth Date"
-            name="birthDate"
-            rules={[{ required: true, message: 'Please input the birth date!' }]}
-          >
-            <DatePicker format="YYYY-MM-DD" />
-          </Form.Item>
-          <Form.Item
-            label="Country"
-            name="countryId"
-            rules={[{ required: true, message: 'Please select the country!' }]}
-          >
-            <Select placeholder="Select a country">
-              {countries.map(country => (
-                <Select.Option key={country.countryId} value={country.countryId}>
-                  {country.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item
-            label="Biography"
-            name="biography"
-          >
-            <Input.TextArea rows={4} placeholder="Enter biography" />
-          </Form.Item>
-          <Form.Item
-            label="Photo URL"
-            name="photo"
-          >
-            <Input placeholder="Paste photo URL here" />
-          </Form.Item>
-        </Form>
       </Modal>
     </div>
   );

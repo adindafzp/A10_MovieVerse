@@ -26,6 +26,10 @@ const CMSUserPage = () => {
   const [form] = Form.useForm();
   const { Option } = Select;
   const navigate = useNavigate();
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: showCount,
+  });
 
   // Periksa apakah pengguna memiliki peran "admin" saat halaman dimuat
   useEffect(() => {
@@ -165,6 +169,7 @@ const CMSUserPage = () => {
 
   const handleShowCountChange = (value) => {
     setShowCount(value);
+    setPagination({ ...pagination, pageSize: value, current: 1 }); // Reset ke halaman 1 agar data ditampilkan dengan benar
   };
 
   const filteredData = users.filter((user) =>
@@ -177,7 +182,8 @@ const CMSUserPage = () => {
       title: "No",
       key: "no",
       align: "center",
-      render: (text, record, index) => index + 1,
+      render: (text, record, index) =>
+        index + 1 + (pagination.current - 1) * pagination.pageSize,
     },
     {
       title: "ID",
@@ -303,7 +309,14 @@ const CMSUserPage = () => {
       <Table
         columns={columns}
         dataSource={filteredData}
-        pagination={{ pageSize: showCount }}
+        pagination={{
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          onChange: (page, pageSize) => {
+            setPagination({ current: page, pageSize });
+            setShowCount(pageSize); // Sinkronkan nilai showCount dengan pageSize yang dipilih
+          },
+        }}
         rowKey={(record) => record.id}
         className="custom-table"
         loading={loading}
