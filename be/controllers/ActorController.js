@@ -15,37 +15,10 @@ class ActorController {
   // Get all actors, including related country data
   static async getAll(req, res) {
     try {
-<<<<<<< HEAD
       const actors = await Actor.findAll({
         include: { model: Country, as: "Country" }, // Menyertakan data negara
       });
       return res.status(200).json(actors);
-=======
-      const { page = 1, limit = 10, search = "" } = req.query;
-      const offset = (page - 1) * limit;
-
-      // Filter pencarian case-insensitive menggunakan MySQL
-      const { count, rows: actors } = await Actor.findAndCountAll({
-        where: {
-          name: {
-            [Op.like]: `%${search}%`,
-          },
-        },
-        offset: parseInt(offset),
-        limit: parseInt(limit),
-        attributes: ["id", "name", "image"], // Mengambil id, name, dan image untuk autocomplete
-      });
-
-      return res.json({
-        actors,
-        meta: {
-          totalItems: count,
-          currentPage: parseInt(page),
-          totalPages: Math.ceil(count / limit),
-          itemsPerPage: parseInt(limit),
-        },
-      });
->>>>>>> c472b94 (input new movies/add movies by admin)
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }

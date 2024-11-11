@@ -28,7 +28,7 @@ const CMSInputNewMovies = () => {
   const [previewPoster, setPreviewPoster] = useState("");
   const [actorInput, setActorInput] = useState("");
   const [selectedGenres, setSelectedGenres] = useState([]);
-  const [trailerLink, setTrailerLink] = useState("");
+  const [trailerLinks, setTrailerLinks] = useState([""]);
   const [posterLink, setPosterLink] = useState("");
 
   useEffect(() => {
@@ -41,14 +41,7 @@ const CMSInputNewMovies = () => {
             axios.get(`${URL}/actors`),
           ]);
 
-        // Add console.log to debug the response
-        console.log("Countries response:", countriesResponse.data);
-
-        // Handle countries data more safely
-        const countriesData =
-          countriesResponse.data.countries || countriesResponse.data || [];
-        setCountries(Array.isArray(countriesData) ? countriesData : []);
-
+        setCountries(countriesResponse.data.countries || []);
         setGenres(genresResponse.data.genres || []);
         setSuggestedActors(actorsResponse.data.actors || []);
       } catch (error) {
@@ -60,20 +53,6 @@ const CMSInputNewMovies = () => {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    const fetchApprovedMovies = async () => {
-      try {
-        const response = await axios.get(`${URL}/movies/approved`);
-        setMovies(response.data);
-      } catch (error) {
-        console.error("Error fetching approved movies:", error);
-        message.error("Failed to fetch approved movies");
-      }
-    };
-  
-    fetchApprovedMovies();
-  }, []);
-  
   // Autocomplete for Actors
   const handleActorSearch = async (input) => {
     if (input.length > 0) {
@@ -103,14 +82,9 @@ const CMSInputNewMovies = () => {
           params: { search: input },
         });
         const directors = response.data || [];
-
-        // Debug respons dari backend
-        console.log("Director response:", directors);
-
-        // Format data untuk AutoComplete
         const formattedDirectors = directors.map((director) => ({
-          value: director.id, // Ini adalah ID yang akan dikirimkan
-          label: director.name, // Ini adalah nama yang ditampilkan ke user
+          value: director.id,
+          label: director.name,
         }));
         setSuggestedDirectors(formattedDirectors);
       } catch (error) {
@@ -128,8 +102,7 @@ const CMSInputNewMovies = () => {
     );
     if (selected) {
       setSelectedDirector(selected);
-      form.setFieldsValue({ directorId: selected.value }); // Mengirim ID
-      console.log("Selected Director ID:", selected.value); // Debugging
+      form.setFieldsValue({ directorId: selected.value });
     }
   };
 
@@ -145,6 +118,7 @@ const CMSInputNewMovies = () => {
 
   const handlePosterPreview = (e) => {
     const url = e.target.value;
+    setPosterLink(url);
     if (url.match(/(https?:\/\/.*\.(?:png|jpg|jpeg|gif))/i)) {
       setPreviewPoster(url);
     } else {
@@ -152,41 +126,35 @@ const CMSInputNewMovies = () => {
     }
   };
 
-  const handleSave = async (values) => {
-    console.log("Form values:", values);
+  const handleTrailerLinkChange = (index, value) => {
+    const updatedLinks = [...trailerLinks];
+    updatedLinks[index] = value;
+    setTrailerLinks(updatedLinks);
+  };
 
-    // Ambil nilai `selectedDirector`, `posterLink`, dan `trailerLink`
+  const addTrailerLinkField = () => {
+    setTrailerLinks([...trailerLinks, ""]);
+  };
+
+  const removeTrailerLinkField = (index) => {
+    const updatedLinks = trailerLinks.filter((_, i) => i !== index);
+    setTrailerLinks(updatedLinks);
+  };
+
+  const handleSave = async (values) => {
     const formData = {
       title: values.title,
       release_date: values.releaseDate?.format("YYYY-MM-DD"),
-      countryId: values.countryId, // Mengirim countryId
+      countryId: values.countryId,
       synopsis: values.synopsis,
       genres: selectedGenres,
-      directorId: selectedDirector?.value, // Mengirim directorId
+      directorId: selectedDirector?.value,
       actors: selectedActors.map((actor) => actor.id),
       poster_url: posterLink,
-      trailer_url: trailerLink,
+      trailer_urls: trailerLinks, // Mengirim sebagai array sesuai kebutuhan controller
       rating: parseFloat(values.rating),
-      approval_status: 0,
+      approval_status: 1,
     };
-
-    // Validasi tambahan
-    if (!formData.directorId) {
-      Swal.fire("Error", "Please select a director", "error");
-      return;
-    }
-
-    if (!trailerLink) {
-      Swal.fire("Error", "'Trailer URL' is required", "error");
-      return;
-    }
-
-    if (!formData.poster_url || !formData.trailer_url || !formData.countryId) {
-      Swal.fire("Error", "Please fill in all required fields", "error");
-      return;
-    }
-
-    console.log("FormData to submit:", formData);
 
     try {
       const token = localStorage.getItem("token");
@@ -229,7 +197,7 @@ const CMSInputNewMovies = () => {
               name="releaseDate"
               rules={[{ required: true }]}
             >
-              <DatePicker format="DD/MM/YYYY" />
+              <DatePicker format="YYYY-MM-DD" />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -251,13 +219,9 @@ const CMSInputNewMovies = () => {
           <Select
             placeholder="Select Country"
             options={countries.map((country) => ({
-              label: country.name, // Menampilkan nama ke user
-              value: country.countryId, // Mengirim ID ke backend
+              label: country.name,
+              value: country.countryId,
             }))}
-            onChange={(value) => {
-              form.setFieldsValue({ countryId: value });
-              console.log("Selected Country ID:", value); // Debugging
-            }}
           />
         </Form.Item>
 
@@ -309,7 +273,7 @@ const CMSInputNewMovies = () => {
             }))}
             onSearch={handleActorSearch}
             onSelect={handleActorSelect}
-            onChange={(value) => setActorInput(value)} // Mengatur state saat input berubah
+            onChange={(value) => setActorInput(value)}
             placeholder="Type actor's name"
           />
         </Form.Item>
@@ -317,7 +281,7 @@ const CMSInputNewMovies = () => {
         <div className="selected-actors-list">
           {selectedActors.map((actor) => (
             <div key={actor.id} className="selected-actor-item">
-              <img src={actor.image} alt={actor.name} className="actor-photo" />
+              <span>{actor.name}</span>
               <button
                 className="remove-btn"
                 onClick={() =>
@@ -332,32 +296,52 @@ const CMSInputNewMovies = () => {
           ))}
         </div>
 
-        <Form.Item
-          label="Trailer URL"
-          name="trailerLink"
-          rules={[{ required: true, message: "'Trailer URL' is required" }]}
-        >
-          <Input
-            value={trailerLink}
-            onChange={(e) => {
-              setTrailerLink(e.target.value);
-              form.setFieldsValue({ trailerLink: e.target.value });
-            }}
-          />
+        <Form.Item label="Trailer URLs">
+          {trailerLinks.map((link, index) => (
+            <div key={index} style={{ display: "flex", alignItems: "center" }}>
+              <Input
+                placeholder="Enter trailer URL"
+                value={link}
+                onChange={(e) => handleTrailerLinkChange(index, e.target.value)}
+                style={{ flex: 1, marginRight: 8 }}
+              />
+              {index > 0 && (
+                <Button
+                  onClick={() => removeTrailerLinkField(index)}
+                  danger
+                  type="text"
+                >
+                  Remove
+                </Button>
+              )}
+            </div>
+          ))}
+          <Button onClick={addTrailerLinkField} type="dashed" style={{ marginTop: 8 }}>
+            Add Trailer Link
+          </Button>
         </Form.Item>
 
         <Form.Item
           label="Poster URL"
           name="poster"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: "'Poster URL' is required" }]}
         >
           <Input
-            value={posterLink}
             onChange={(e) => {
-              setPosterLink(e.target.value);
-              setPreviewPoster(e.target.value);
+              const url = e.target.value;
+              setPosterLink(url);
+              form.setFieldsValue({ poster: url });
+              handlePosterPreview(e);
             }}
+            placeholder="Enter poster URL"
           />
+          {previewPoster && (
+            <img
+              src={previewPoster}
+              alt="Poster Preview"
+              style={{ maxWidth: "100%", marginTop: "10px" }}
+            />
+          )}
         </Form.Item>
 
         <Button type="primary" htmlType="submit">
