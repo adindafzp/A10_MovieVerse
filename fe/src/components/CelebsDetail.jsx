@@ -7,7 +7,6 @@ import "../styles/CelebsDetail.css";
 const CelebsDetail = () => {
   const { id } = useParams();
   const [celeb, setCeleb] = useState(null);
-  const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [country, setCountry] = useState("Unknown");
@@ -29,7 +28,6 @@ const CelebsDetail = () => {
         console.log("Fetched data:", data);
 
         setCeleb(data.actor);
-        setMovies(data.actor.Movies || []);
         setCountry(data.actor.Country?.name || "Unknown");
         setLoading(false);
       } catch (error) {
@@ -64,16 +62,6 @@ const CelebsDetail = () => {
             <strong>Country:</strong> {country}
           </p>
           <p>{celeb.biography || "No biography available."}</p>
-          <h3>Movies:</h3>
-          <ul>
-            {movies.length > 0 ? (
-              movies.map((movie) => (
-                <li key={movie.id}>{movie.title}</li>
-              ))
-            ) : (
-              <p>No movies found.</p>
-            )}
-          </ul>
         </Col>
       </Row>
     </Container>

@@ -115,6 +115,7 @@ class PublicMovieController {
         include: [
           {
             model: MovieVideo,
+            as: "MovieVideos",
           },
           {
             model: Director,

@@ -15,27 +15,19 @@ class MovieController {
       // Membuat film dengan data yang sudah disiapkan
       const movie = await Movie.create(movieData);
 
-      console.log("New Movie Created:", movie);
-      return res.status(201).json(movie);
-    } catch (error) {
-      console.error("Error in create movie:", error);
-      return res.status(500).json({ error: error.message });
-    }
-  }
-
       // If `actors` is provided, associate actors with the movie
-      if (actors && actors.length > 0) {
-        await movie.setActors(actors); // Assuming `actors` is an array of actor IDs
+      if (req.body.actors && req.body.actors.length > 0) {
+        await movie.setActors(req.body.actors); // Assuming `actors` is an array of actor IDs
       }
 
       // If `genres` is provided, associate genres with the movie
-      if (genres && genres.length > 0) {
-        await movie.setGenres(genres); // Assuming `genres` is an array of genre IDs
+      if (req.body.genres && req.body.genres.length > 0) {
+        await movie.setGenres(req.body.genres); // Assuming `genres` is an array of genre IDs
       }
 
       // If `trailer_urls` is provided, create entries in the MovieVideo table
-      if (trailer_urls && Array.isArray(trailer_urls) && trailer_urls.length > 0) {
-        const videoEntries = trailer_urls.map((url, index) => ({
+      if (req.body.trailer_urls && Array.isArray(req.body.trailer_urls) && req.body.trailer_urls.length > 0) {
+        const videoEntries = req.body.trailer_urls.map((url, index) => ({
           url,
           title: `Trailer ${index + 1}`, // Bisa diganti sesuai kebutuhan
           movieId: movie.id,
@@ -72,7 +64,7 @@ class MovieController {
           },
           {
             model: MovieVideo,
-            as: "Videos", // Alias sesuai dengan model
+            as: "MovieVideos",
             attributes: ["id", "url", "title"],
           },
         ],
@@ -300,5 +292,6 @@ class MovieController {
       return res.status(500).json({ error: error.message });
     }
   }
+}
 
 module.exports = MovieController;

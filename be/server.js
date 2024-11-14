@@ -34,20 +34,21 @@ const port = 3000;
 // CORS Configuration
 app.use(
   cors({
-    origin: "http://localhost:5173", // domain frontend
+    origin: "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-app.options('*', cors()); // Menghandle preflight request untuk semua routes
+app.options('*', cors()); // Handle preflight requests for all routes
 
 // Test Database Connection and Sync Models
 sequelize
   .authenticate()
   .then(() => {
     console.log("Connection has been established successfully.");
-    return sequelize.sync({ alter: true }); // Menambahkan { alter: true } untuk sinkronisasi model
+    return sequelize.sync(); // Removing { alter: true } for production
   })
   .then(() => {
     console.log("Database synced successfully.");
@@ -56,13 +57,14 @@ sequelize
     console.error("Unable to connect to the database:", err);
   });
 
-// Parsing JSON Requests
+// Parsing JSON and URL-encoded Requests
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Session Management
 app.use(
   session({
-    secret: process.env.JWT_SECRET, // Secret for session encryption
+    secret: process.env.JWT_SECRET,
     resave: false,
     saveUninitialized: false,
   })
@@ -90,10 +92,16 @@ app.use("/api/actors", actorRoutesPublic);
 app.use("/api/genres", genreRoutesPublic);
 app.use("/api/countries", countryRoutesPublic);
 
+// 404 Handler for Undefined Routes
+app.use((req, res, next) => {
+  res.status(404).json({ message: "Route not found" });
+});
+
 // Error Handling Middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  console.error("Error Details:", err.message);
+  console.error("Stack Trace:", err.stack);
+  res.status(500).json({ message: "Something went wrong!", error: err.message });
 });
 
 // Start the server

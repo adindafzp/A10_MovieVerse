@@ -24,52 +24,53 @@ class reviewController {
     }
   }
 
-  // Get reviews for a specific movie
-  static async getReviewsByMovieId(req, res) {
-    try {
-      const { movieId } = req.params;
-      const reviews = await Review.findAll({
-        where: { movieId },
-        include: [
-          {
-            model: User,
-            attributes: ["username"], // Ambil username dari User
-          },
-          {
-            model: Movie,
-            as : "Movie",
-            attributes: ["title"], // Ambil title dari Movie
-          },
-        ],
-        attributes: ["id", "content", "rating", "createdAt", "status"], // Ambil kolom yang diperlukan dari Review
-      });
-      if (!reviews) {
-        return res.status(404).json({ message: "No reviews found" });
-      }
+  // Get reviews for a specific movie// controllers/ReviewController.js
 
-      return res.status(200).json(reviews);
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
-      return res.status(500).json({ message: "Failed to fetch reviews" });
+static async getReviewsByMovieId(req, res) {
+  try {
+    const { movieId } = req.params;
+    const reviews = await Review.findAll({
+      where: { movieId },
+      include: [
+        {
+          model: User,
+          as: "User", // Gunakan alias yang sesuai
+          attributes: ["username"],
+        },
+        {
+          model: Movie,
+          as: "Movie",
+          attributes: ["title"],
+        },
+      ],
+      attributes: ["id", "content", "rating", "createdAt", "status"],
+    });
+    if (!reviews) {
+      return res.status(404).json({ message: "No reviews found" });
     }
-  }
 
-  static async getAllReviews(req, res) {
-    try {
-      const reviews = await Review.findAll({
-        include: [
-          { model: User, attributes: ["username"] },
-          { model: Movie, as: "Movie", attributes: ["title"] } // Tambahkan Movie dengan alias dan atribut title
-        ],
-        attributes: ["id", "content", "rating", "status", "createdAt"]
-      });
-      return res.status(200).json(reviews);
-    } catch (error) {
-      console.error("Error fetching reviews:", error);
-      return res.status(500).json({ message: "Failed to fetch reviews" });
-    }
+    return res.status(200).json(reviews);
+  } catch (error) {
+    console.error("Error fetching reviews:", error);
+    return res.status(500).json({ message: "Failed to fetch reviews" });
   }
-  
+}
+
+static async getAllReviews(req, res) {
+  try {
+    const reviews = await Review.findAll({
+      include: [
+        { model: User, as: "User", attributes: ["username"] }, // Gunakan alias yang sesuai
+        { model: Movie, as: "Movie", attributes: ["title"] }
+      ],
+      attributes: ["id", "content", "rating", "status", "createdAt"]
+    });
+    return res.status(200).json(reviews);
+  } catch (error) {
+    console.error("Error fetching reviews:", error);
+    return res.status(500).json({ message: "Failed to fetch reviews" });
+  }
+}
 
   static async approveReview(req, res) {
     const { id } = req.params;

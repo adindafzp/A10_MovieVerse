@@ -20,7 +20,7 @@ Country.hasMany(Director, { foreignKey: "countryId", as: "Directors" });
 Director.belongsTo(Country, { foreignKey: "countryId", as: "Country" });
 
 // Relasi Movie dengan MovieVideo (One-to-Many)
-Movie.hasMany(MovieVideo, { foreignKey: "movieId", as: "Videos" });
+Movie.hasMany(MovieVideo, { foreignKey: "movieId", as: "MovieVideos" });
 MovieVideo.belongsTo(Movie, { foreignKey: "movieId", as: "Movie" });
 
 // Relasi Many-to-Many antara Movie dan Genre
