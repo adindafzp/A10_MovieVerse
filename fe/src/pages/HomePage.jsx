@@ -123,7 +123,7 @@ const HomePage = () => {
                         </div>
                         <button
                           className="btn btn-danger btn-lg rounded-1 me-2"
-                          onClick={() => navigate("/kelas")}
+                          onClick={() => navigate(`/movie/${image.id}`)}
                         >
                           Watch Now
                         </button>

@@ -1,40 +1,39 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Container, Row, Col } from "react-bootstrap";
-// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-// import { faYoutube } from "@fortawesome/free-brands-svg-icons";
-import { apiKey } from "../data";
-import "../styles/CelebsDetail.css"; // Import file CSS
+import { URL } from "../utils";
+import "../styles/CelebsDetail.css";
 
 const CelebsDetail = () => {
-  const { id } = useParams(); // Get celeb ID from URL parameters
+  const { id } = useParams();
   const [celeb, setCeleb] = useState(null);
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [country, setCountry] = useState("Unknown");
 
   useEffect(() => {
     const fetchCelebDetails = async () => {
-      const celebUrl = `https://api.themoviedb.org/3/person/${id}?api_key=${apiKey}`;
-      const movieUrl = `https://api.themoviedb.org/3/person/${id}/movie_credits?api_key=${apiKey}`;
+      // Menggunakan URL yang benar dengan `/api/actors/${id}`
+      const apiUrl = `${URL}/actors/${id}`;
+      console.log("Fetching actor data from:", apiUrl);
 
       try {
-        const [celebResponse, movieResponse] = await Promise.all([
-          fetch(celebUrl),
-          fetch(movieUrl),
-        ]);
+        const response = await fetch(apiUrl);
 
-        if (!celebResponse.ok || !movieResponse.ok) {
-          throw new Error("Network response was not ok");
+        if (!response.ok) {
+          throw new Error(`Failed to fetch actor data: ${response.statusText}`);
         }
 
-        const celebData = await celebResponse.json();
-        const movieData = await movieResponse.json();
+        const data = await response.json();
+        console.log("Fetched data:", data);
 
-        setCeleb(celebData);
-        setMovies(movieData.cast.slice(0, 10)); // Limit to 10 movies
+        setCeleb(data.actor);
+        setMovies(data.actor.Movies || []);
+        setCountry(data.actor.Country?.name || "Unknown");
         setLoading(false);
       } catch (error) {
+        console.error("Error fetching actor data:", error);
         setError(error);
         setLoading(false);
       }
@@ -48,28 +47,33 @@ const CelebsDetail = () => {
 
   return (
     <Container className="celeb-detail-container">
-      {/* Celebrity Details Section */}
       <Row>
         <Col md={3}>
-          {" "}
-          {/* Change to md={3} to make the image column smaller */}
           <img
-            src={`https://image.tmdb.org/t/p/w500${celeb.profile_path}`}
+            src={celeb.image || "https://via.placeholder.com/500"}
             alt={celeb.name}
             className="img-fluid rounded"
           />
         </Col>
         <Col md={9}>
-          {" "}
-          {/* Change to md={9} to increase the size of the text column */}
           <h1 className="display-4">{celeb.name}</h1>
           <p>
-            <strong>Birthday:</strong> {celeb.birthday}
+            <strong>Birthday:</strong> {celeb.birthdate || "Unknown"}
           </p>
           <p>
-            <strong>Place of Birth:</strong> {celeb.place_of_birth}
+            <strong>Country:</strong> {country}
           </p>
-          <p>{celeb.biography}</p>
+          <p>{celeb.biography || "No biography available."}</p>
+          <h3>Movies:</h3>
+          <ul>
+            {movies.length > 0 ? (
+              movies.map((movie) => (
+                <li key={movie.id}>{movie.title}</li>
+              ))
+            ) : (
+              <p>No movies found.</p>
+            )}
+          </ul>
         </Col>
       </Row>
     </Container>

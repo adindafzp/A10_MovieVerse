@@ -9,38 +9,65 @@ const {
 } = require("../../models/index");
 
 class PublicMovieController {
-  // Create a new movie
   static async getPopular(req, res) {
     try {
       const movies = await Movie.findAll({
         where: {
-          is_popular: true,
+          is_popular: true, // Mengambil film yang ditandai sebagai populer
+          approval_status: true, // Hanya mengambil film yang telah disetujui
+        },
+        include: [
+          {
+            model: Director,
+            as: "Director", // Menggunakan alias "Director"
+            attributes: ["id", "name"],
+          },
+          {
+            model: Country,
+            as: "Country", // Menggunakan alias "Country"
+            attributes: ["countryId", "name"],
+          },
+          {
+            model: Actor,
+            as: "Actors", // Menggunakan alias "Actors"
+            through: { attributes: [] }, // Menyembunyikan kolom tambahan pada tabel penghubung
+            attributes: ["id", "name"],
+          },
+          {
+            model: Genre,
+            as: "Genres", // Menggunakan alias "Genres"
+            through: { attributes: [] },
+            attributes: ["id", "name"],
+          },
+        ],
+      });
+
+      return res.status(200).json(movies);
+    } catch (error) {
+      console.error("Error fetching popular movies:", error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  static async getAll(req, res) {
+    console.log("Fetching all approved movies");
+    try {
+      const movies = await Movie.findAll({
+        where: {
+          approval_status: true, // Only approved movies
         },
         include: [
           {
             model: Genre,
             as: "Genres",
-          },
-        ],
-      });
-      return res.status(200).json(movies);
-    } catch (error) {
-      return res.status(500).json({ error: error.message });
-    }
-  }
-  // Get all movies
-  static async getAll(req, res) {
-    console.log("all movies");
-    try {
-      const movies = await Movie.findAll({
-        include: [
-          {
-            model: Genre,
-            as: "Genres", 
+            through: { attributes: [] },
+            attributes: ["id", "name"],
           },
           {
             model: Actor,
-            as: "Actors", // Menggunakan alias "Actors"
+            as: "Actors", // Using alias "Actors"
+            through: { attributes: [] },
+            attributes: ["id", "name"],
           },
         ],
       });
@@ -50,18 +77,22 @@ class PublicMovieController {
     }
   }
 
+  // Get top-rated movies with approval status true
   static async getTopRated(req, res) {
     try {
       const movies = await Movie.findAll({
         where: {
           rating: {
-            [Op.gt]: 4.4, // Menampilkan movie dengan rating > 4.4
+            [Op.gt]: 4.4, // Movies with rating > 4.4
           },
+          approval_status: true, // Only approved movies
         },
         include: [
           {
             model: Genre,
-            as: "Genres", // Menggunakan alias yang sesuai
+            as: "Genres", // Using alias "Genres"
+            through: { attributes: [] },
+            attributes: ["id", "name"],
           },
         ],
       });
@@ -73,11 +104,13 @@ class PublicMovieController {
     }
   }
 
+  // Get movie details, including related data, only if approved
   static async getMovieDetail(req, res) {
     try {
       const movie = await Movie.findOne({
         where: {
           id: req.params.id,
+          approval_status: true, // Only fetch movie if it's approved
         },
         include: [
           {
@@ -85,14 +118,18 @@ class PublicMovieController {
           },
           {
             model: Director,
+            as: "Director",
+            attributes: ["id", "name"],
           },
           {
             model: Actor,
-            as: "Actors", // Gunakan alias sesuai asosiasi yang didefinisikan
+            as: "Actors", // Using alias "Actors"
           },
           {
             model: Genre,
-            as: "Genres", // Menggunakan alias "Genres" sesuai dengan asosiasi
+            as: "Genres", // Using alias "Genres"
+            through: { attributes: [] },
+            attributes: ["id", "name"],
           },
         ],
       });
@@ -101,15 +138,16 @@ class PublicMovieController {
         return res.status(404).json({ error: "Movie not found" });
       }
 
-      // Fetching 5 recommended movies based on a criterion (for example, release date)
+      // Fetching 5 recommended movies based on release date
       const recommendations = await Movie.findAll({
         where: {
           id: {
-            [Op.ne]: movie.id, // Exclude the current movie from recommendations
+            [Op.ne]: movie.id, // Exclude the current movie
           },
+          approval_status: true, // Only approved movies for recommendations
         },
-        order: [["release_date", "DESC"]], // Order by release date or any other criteria
-        limit: 5, // Limit to 5 recommendations
+        order: [["release_date", "DESC"]],
+        limit: 5,
       });
 
       return res.status(200).json({
@@ -117,6 +155,7 @@ class PublicMovieController {
         recommendations,
       });
     } catch (error) {
+      console.error("Error fetching movie details:", error);
       return res.status(500).json({ error: error.message });
     }
   }
@@ -189,7 +228,10 @@ class PublicMovieController {
         return res.status(400).json({ message: "Invalid country ID" });
       }
 
-      const whereClause = {};
+      const whereClause = {
+        approval_status: true, // Hanya mengambil film yang disetujui
+      };
+      
       const order = [];
 
       // Filter berdasarkan query untuk movies

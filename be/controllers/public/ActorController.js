@@ -1,5 +1,5 @@
 const { Op } = require("sequelize");
-const { Actor, Movie, Series } = require("../../models/index");
+const { Actor, Movie, Country } = require("../../models/index");
 
 class ActorControllerPublic {
   static async getAll(req, res, next) {
@@ -11,7 +11,7 @@ class ActorControllerPublic {
       const { count, rows: actors } = await Actor.findAndCountAll({
         where: {
           name: {
-            [Op.like]: `%${search}%`, // Menggunakan Op.like untuk pencarian case-insensitive di MySQL
+            [Op.like]: `%${search}%`,
           },
         },
         offset: parseInt(offset),
@@ -40,6 +40,11 @@ class ActorControllerPublic {
           {
             model: Movie,
             as: "Movies",
+          },
+          {
+            model: Country,
+            as: "Country", // Tambahkan relasi dengan Country
+            attributes: ["countryId", "name"], // Mengambil data countryId dan name
           },
         ],
       });

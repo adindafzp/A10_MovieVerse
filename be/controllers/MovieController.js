@@ -6,7 +6,17 @@ class MovieController {
 static async create(req, res) {
   try {
     console.log("Data received in create movie:", req.body);
-    const movie = await Movie.create(req.body);
+
+    // Tambahkan approval_status secara eksplisit
+    const movieData = {
+      ...req.body,
+      approval_status: 1, // Langsung diset menjadi approved
+    };
+
+    // Membuat film dengan data yang sudah disiapkan
+    const movie = await Movie.create(movieData);
+
+    console.log("New Movie Created:", movie);
     return res.status(201).json(movie);
   } catch (error) {
     console.error("Error in create movie:", error);
@@ -109,6 +119,46 @@ static async getById(req, res) {
     }
   }
 
+  // Update approval status
+  static async updateApprovalStatus(req, res) {
+    try {
+      const { id } = req.params;
+      const { approval_status } = req.body;
+
+      // Periksa apakah approval_status valid (0 atau 1)
+      if (
+        typeof approval_status !== "boolean" &&
+        approval_status !== 0 &&
+        approval_status !== 1
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Invalid approval status value" });
+      }
+
+      const [updated] = await Movie.update(
+        { approval_status },
+        { where: { id } }
+      );
+
+      if (!updated) {
+        return res.status(404).json({ message: "Movie not found" });
+      }
+
+      const updatedMovie = await Movie.findByPk(id, {
+        attributes: ["id", "title", "approval_status"],
+      });
+
+      return res.status(200).json({
+        message: "Approval status updated successfully",
+        movie: updatedMovie,
+      });
+    } catch (error) {
+      console.error("Error updating approval status:", error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
   // Delete a movie
   static async delete(req, res) {
     try {
@@ -124,45 +174,70 @@ static async getById(req, res) {
     }
   }
 
-// Get all approved movies (hanya film yang sudah di-approve)
-static async getAllApproved(req, res) {
-  try {
-    const movies = await Movie.findAll({
-      where: {
-        approval_status: 1, // Hanya mengambil data yang sudah di-approve
-      },
-      include: [
-        {
-          model: Director,
-          as: "Director",
-          attributes: ["id", "name"],
+  // Get all approved movies (hanya film yang sudah di-approve)
+  static async getAllApproved(req, res) {
+    try {
+      const movies = await Movie.findAll({
+        where: {
+          approval_status: 1,
         },
-        {
-          model: Country,
-          as: "Country",
-          attributes: ["countryId", "name"],
-        },
-        {
-          model: Actor,
-          as: "Actors",
-          through: { attributes: [] },
-          attributes: ["id", "name"],
-        },
-        {
-          model: Genre,
-          as: "Genres",
-          through: { attributes: [] },
-          attributes: ["id", "name"],
-        },
-      ],
-    });
+        include: [
+          {
+            model: Director,
+            as: "Director",
+            attributes: ["id", "name"],
+          },
+          {
+            model: Country,
+            as: "Country",
+            attributes: ["countryId", "name"],
+          },
+          {
+            model: Actor,
+            as: "Actors",
+            through: { attributes: [] },
+            attributes: ["id", "name"],
+          },
+          {
+            model: Genre,
+            as: "Genres",
+            through: { attributes: [] },
+            attributes: ["id", "name"],
+          },
+        ],
+      });
 
-    return res.status(200).json(movies);
-  } catch (error) {
-    console.error("Error in fetching approved movies:", error);
-    return res.status(500).json({ error: error.message });
+      return res.status(200).json(movies);
+    } catch (error) {
+      console.error("Error in fetching approved movies:", error);
+      return res.status(500).json({ error: error.message });
+    }
   }
-}
+
+  static async approveMovie(req, res) {
+    try {
+      const movieId = req.params.id;
+
+      // Update status persetujuan pada database
+      const [updated] = await Movie.update(
+        { approval_status: 1 }, // Set status ke approved (1)
+        { where: { id: movieId } }
+      );
+
+      if (updated) {
+        const updatedMovie = await Movie.findByPk(movieId);
+        return res.status(200).json({
+          message: "Movie approved successfully",
+          movie: updatedMovie,
+        });
+      } else {
+        return res.status(404).json({ message: "Movie not found" });
+      }
+    } catch (error) {
+      console.error("Error approving movie:", error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
 
 }
 

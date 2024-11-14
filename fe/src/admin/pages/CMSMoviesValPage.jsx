@@ -38,8 +38,14 @@ const CMSmoviesValidate = () => {
       try {
         setIsLoading(true);
         const response = await axios.get(`${URL}/admin/movie`);
+        const filteredData = response.data.filter(
+          (movie) =>
+            statusFilter === "None" ||
+            (statusFilter === "Approved" && movie.approval_status === 1) ||
+            (statusFilter === "Unapproved" && movie.approval_status === 0)
+        );
+        setDataSource(filteredData);
         console.log("Fetched movies data:", response.data);
-        setDataSource(response.data);
       } catch (error) {
         console.error("Error fetching movies:", error);
         message.error("Failed to fetch movies data");
@@ -49,7 +55,7 @@ const CMSmoviesValidate = () => {
     };
 
     fetchMovies();
-  }, []);
+  }, [statusFilter]);
 
   // Handle filter change
   const handleStatusChange = (value) => {
@@ -67,10 +73,8 @@ const CMSmoviesValidate = () => {
       const response = await axios.get(`${URL}/admin/movie/${record.id}`);
       const movieData = response.data;
 
-      const actorsList =
-        movieData.Actors?.map((actor) => actor.name).join(", ") || "";
-      const genresList =
-        movieData.Genres?.map((genre) => genre.name).join(", ") || "";
+      const actorsList = movieData.Actors?.map((actor) => actor.name).join(", ") || "";
+      const genresList = movieData.Genres?.map((genre) => genre.name).join(", ") || "";
 
       const formData = {
         title: movieData.title,
@@ -126,7 +130,9 @@ const CMSmoviesValidate = () => {
 
   const handleApprove = async (movieId) => {
     try {
-      await axios.put(`${URL}/admin/movie/${movieId}/approve`);
+      await axios.put(`${URL}/admin/movie/${movieId}/approve`, {
+        approval_status: 1,
+      });
       setDataSource((prevData) =>
         prevData.map((movie) =>
           movie.id === movieId ? { ...movie, approval_status: 1 } : movie
@@ -261,7 +267,7 @@ const CMSmoviesValidate = () => {
         <div className="filters">
           <Select
             value={statusFilter}
-            onChange={(value) => setStatusFilter(value)}
+            onChange={handleStatusChange}
             style={{ width: 150 }}
           >
             <Option value="None">None</Option>
@@ -272,7 +278,7 @@ const CMSmoviesValidate = () => {
             min={1}
             max={100}
             value={showCount}
-            onChange={(value) => setShowCount(value)}
+            onChange={handleShowCountChange}
           />
         </div>
       </div>
