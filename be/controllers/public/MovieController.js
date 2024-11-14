@@ -161,9 +161,20 @@ class PublicMovieController {
   }
   // Menambahkan film baru
   static async addMovie(req, res) {
-    const { title, year, country, synopsis, genres, actors, trailer, poster, directorId, rating } = req.body;
+    const {
+      title,
+      year,
+      country,
+      synopsis,
+      genres,
+      actors,
+      trailer,
+      poster,
+      directorId,
+      rating,
+    } = req.body;
     const userId = req.userId; // Mendapatkan userId dari middleware
-  
+
     try {
       // Menambahkan film baru dengan data dari req.body
       const newMovie = await Movie.create({
@@ -176,17 +187,17 @@ class PublicMovieController {
         directorId: directorId,
         addedBy: userId,
         approval_status: 0,
-        rating, 
+        rating,
       });
-  
+
       // Cek apakah movie berhasil dibuat
       console.log("New Movie:", newMovie);
-  
+
       // Validasi apakah newMovie memiliki ID
       if (!newMovie || !newMovie.id) {
         return res.status(500).json({ message: "Failed to retrieve movie ID" });
       }
-  
+
       // Tambahkan genre dan aktor jika ada
       if (genres && genres.length > 0) {
         console.log("Associating genres:", genres);
@@ -196,16 +207,18 @@ class PublicMovieController {
         console.log("Associating actors:", actors);
         await newMovie.setActors(actors);
       }
-  
+
       res.status(201).json({
         message: "Movie added successfully and is pending approval",
         newMovie,
       });
     } catch (error) {
       console.error("Error during movie creation:", error);
-      res.status(500).json({ message: "Failed to add movie", error: error.message });
+      res
+        .status(500)
+        .json({ message: "Failed to add movie", error: error.message });
     }
-  }   
+  }
 
   static async searchMovies(req, res) {
     try {
@@ -231,7 +244,6 @@ class PublicMovieController {
       const whereClause = {
         approval_status: true, // Hanya mengambil film yang disetujui
       };
-      
       const order = [];
 
       // Filter berdasarkan query untuk movies
@@ -247,8 +259,8 @@ class PublicMovieController {
           includeOptions.push({
             model: Actor,
             as: "Actors",
-            where: { name: { [Op.like]: `%${query}%` } }, // Filter by actor's name
-            required: true, // Ensure that only movies with matching actors are returned
+            where: { name: { [Op.like]: `%${query}%` } },
+            required: true,
           });
         }
       }
@@ -284,7 +296,7 @@ class PublicMovieController {
         includeOptions.push({
           model: Country,
           as: "Country",
-          where: { countryId: countryId }, // Ensure ID matches schema
+          where: { countryId: countryId },
           required: true,
         });
       } else {
@@ -300,7 +312,7 @@ class PublicMovieController {
         includeOptions.push({
           model: Actor,
           as: "Actors",
-          required: false, // Allow movies without actors to be included
+          required: false,
         });
       }
 

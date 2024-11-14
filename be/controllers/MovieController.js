@@ -1,107 +1,170 @@
-// controllers/MovieController.js
-const { Movie, Director, Country, Actor, Genre } = require("../models");
+const { Movie, Director, Country, Actor, Genre, MovieVideo } = require("../models");
 
 class MovieController {
-// Create a new movie
-static async create(req, res) {
-  try {
-    console.log("Data received in create movie:", req.body);
+  // Create a new movie
+  static async create(req, res) {
+    try {
+      console.log("Data received in create movie:", req.body);
 
-    // Tambahkan approval_status secara eksplisit
-    const movieData = {
-      ...req.body,
-      approval_status: 1, // Langsung diset menjadi approved
-    };
+      // Tambahkan approval_status secara eksplisit
+      const movieData = {
+        ...req.body,
+        approval_status: 1, // Langsung diset menjadi approved
+      };
 
-    // Membuat film dengan data yang sudah disiapkan
-    const movie = await Movie.create(movieData);
+      // Membuat film dengan data yang sudah disiapkan
+      const movie = await Movie.create(movieData);
 
-    console.log("New Movie Created:", movie);
-    return res.status(201).json(movie);
-  } catch (error) {
-    console.error("Error in create movie:", error);
-    return res.status(500).json({ error: error.message });
+      console.log("New Movie Created:", movie);
+      return res.status(201).json(movie);
+    } catch (error) {
+      console.error("Error in create movie:", error);
+      return res.status(500).json({ error: error.message });
+    }
   }
-}
 
-// Get all movies
-static async getAll(req, res) {
-  try {
-    const movies = await Movie.findAll({
-      include: [
-        {
-          model: Director,
-          as: "Director", // Menggunakan alias yang sesuai
-          attributes: ["id", "name"],
-        },
-        {
-          model: Country,
-          as: "Country", // Menggunakan alias yang sesuai
-          attributes: ["countryId", "name"], // Gunakan 'countryId' bukan 'id'
-        },
-        {
-          model: Actor,
-          as: "Actors",
-          through: { attributes: [] },
-          attributes: ["id", "name"],
-        },
-        {
-          model: Genre,
-          as: "Genres",
-          through: { attributes: [] },
-          attributes: ["id", "name"],
-        },
-      ],
-    });
+      // If `actors` is provided, associate actors with the movie
+      if (actors && actors.length > 0) {
+        await movie.setActors(actors); // Assuming `actors` is an array of actor IDs
+      }
 
-    return res.status(200).json(movies);
-  } catch (error) {
-    console.error("Error in fetching movies:", error);
-    return res.status(500).json({ error: error.message });
+      // If `genres` is provided, associate genres with the movie
+      if (genres && genres.length > 0) {
+        await movie.setGenres(genres); // Assuming `genres` is an array of genre IDs
+      }
+
+      // If `trailer_urls` is provided, create entries in the MovieVideo table
+      if (trailer_urls && Array.isArray(trailer_urls) && trailer_urls.length > 0) {
+        const videoEntries = trailer_urls.map((url, index) => ({
+          url,
+          title: `Trailer ${index + 1}`, // Bisa diganti sesuai kebutuhan
+          movieId: movie.id,
+        }));
+
+        // Insert semua trailers ke MovieVideo
+        await MovieVideo.bulkCreate(videoEntries);
+      }
+
+      // Retrieve the complete movie with relations to return
+      const createdMovie = await Movie.findByPk(movie.id, {
+        include: [
+          {
+            model: Director,
+            as: "Director",
+            attributes: ["id", "name"],
+          },
+          {
+            model: Country,
+            as: "Country",
+            attributes: ["countryId", "name"],
+          },
+          {
+            model: Actor,
+            as: "Actors",
+            through: { attributes: [] },
+            attributes: ["id", "name"],
+          },
+          {
+            model: Genre,
+            as: "Genres",
+            through: { attributes: [] },
+            attributes: ["id", "name"],
+          },
+          {
+            model: MovieVideo,
+            as: "Videos", // Alias sesuai dengan model
+            attributes: ["id", "url", "title"],
+          },
+        ],
+      });
+
+      return res.status(201).json({
+        message: "Movie created successfully",
+        movie: createdMovie,
+      });
+    } catch (error) {
+      console.error("Error in create movie:", error);
+      return res.status(500).json({ error: error.message });
+    }
   }
-}
+
+  // Get all movies
+  static async getAll(req, res) {
+    try {
+      const movies = await Movie.findAll({
+        include: [
+          {
+            model: Director,
+            as: "Director",
+            attributes: ["id", "name"],
+          },
+          {
+            model: Country,
+            as: "Country",
+            attributes: ["countryId", "name"],
+          },
+          {
+            model: Actor,
+            as: "Actors",
+            through: { attributes: [] },
+            attributes: ["id", "name"],
+          },
+          {
+            model: Genre,
+            as: "Genres",
+            through: { attributes: [] },
+            attributes: ["id", "name"],
+          },
+        ],
+      });
+
+      return res.status(200).json(movies);
+    } catch (error) {
+      console.error("Error in fetching movies:", error);
+      return res.status(500).json({ error: error.message });
+    }
+  }
 
   // Get a movie by ID
- // Get a movie by ID
-static async getById(req, res) {
-  try {
-    const movie = await Movie.findByPk(req.params.id, {
-      include: [
-        {
-          model: Director,
-          as: "Director",
-          attributes: ["id", "name"],
-        },
-        {
-          model: Country,
-          as: "Country",
-          attributes: ["countryId", "name"],
-        },
-        {
-          model: Actor,
-          as: "Actors",
-          through: { attributes: [] },
-          attributes: ["id", "name"],
-        },
-        {
-          model: Genre,
-          as: "Genres",
-          through: { attributes: [] },
-          attributes: ["id", "name"],
-        },
-      ],
-    });
+  static async getById(req, res) {
+    try {
+      const movie = await Movie.findByPk(req.params.id, {
+        include: [
+          {
+            model: Director,
+            as: "Director",
+            attributes: ["id", "name"],
+          },
+          {
+            model: Country,
+            as: "Country",
+            attributes: ["countryId", "name"],
+          },
+          {
+            model: Actor,
+            as: "Actors",
+            through: { attributes: [] },
+            attributes: ["id", "name"],
+          },
+          {
+            model: Genre,
+            as: "Genres",
+            through: { attributes: [] },
+            attributes: ["id", "name"],
+          },
+        ],
+      });
 
-    if (!movie) {
-      return res.status(404).json({ message: "Movie not found" });
+      if (!movie) {
+        return res.status(404).json({ message: "Movie not found" });
+      }
+
+      return res.status(200).json(movie);
+    } catch (error) {
+      console.error("Error in fetching movie by ID:", error);
+      return res.status(500).json({ error: error.message });
     }
-
-    return res.status(200).json(movie);
-  } catch (error) {
-    console.error("Error in fetching movie by ID:", error);
-    return res.status(500).json({ error: error.message });
   }
-}
 
   // Update a movie
   static async update(req, res) {
@@ -125,7 +188,6 @@ static async getById(req, res) {
       const { id } = req.params;
       const { approval_status } = req.body;
 
-      // Periksa apakah approval_status valid (0 atau 1)
       if (
         typeof approval_status !== "boolean" &&
         approval_status !== 0 &&
@@ -238,7 +300,5 @@ static async getById(req, res) {
       return res.status(500).json({ error: error.message });
     }
   }
-
-}
 
 module.exports = MovieController;

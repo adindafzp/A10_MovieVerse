@@ -64,7 +64,7 @@ const CMSmoviesValidate = () => {
 
   const handleShowCountChange = (value) => {
     setShowCount(value);
-    setPagination({ ...pagination, pageSize: value, current: 1 }); // Reset ke halaman 1 agar data ditampilkan dengan benar
+    setPagination({ ...pagination, pageSize: value, current: 1 });
   };
 
   // Aksi: Edit, Delete, Approve
