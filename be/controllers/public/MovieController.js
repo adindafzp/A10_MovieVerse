@@ -105,31 +105,36 @@ class PublicMovieController {
   }
 
   // Get movie details, including related data, only if approved
+  // controllers/MovieController.js
   static async getMovieDetail(req, res) {
     try {
       const movie = await Movie.findOne({
-        where: {
-          id: req.params.id,
-          approval_status: true, // Only fetch movie if it's approved
-        },
+        where: { id: req.params.id },
         include: [
           {
             model: MovieVideo,
+            as: "Videos", // Menggunakan alias yang sesuai dengan asosiasi
+            attributes: ["id", "url", "title"],
           },
           {
             model: Director,
-            as: "Director",
+            as: "Director", // Alias harus sama dengan yang didefinisikan di model
             attributes: ["id", "name"],
           },
           {
+            model: Country,
+            as: "Country",
+            attributes: ["countryId", "name"],
+          },
+          {
             model: Actor,
-            as: "Actors", // Using alias "Actors"
+            as: "Actors",
             through: { attributes: [] },
             attributes: ["id", "name"],
           },
           {
             model: Genre,
-            as: "Genres", // Using alias "Genres"
+            as: "Genres",
             through: { attributes: [] },
             attributes: ["id", "name"],
           },
@@ -137,30 +142,16 @@ class PublicMovieController {
       });
 
       if (!movie) {
-        return res.status(404).json({ error: "Movie not found" });
+        return res.status(404).json({ message: "Movie not found" });
       }
 
-      // Fetching 5 recommended movies based on release date
-      const recommendations = await Movie.findAll({
-        where: {
-          id: {
-            [Op.ne]: movie.id, // Exclude the current movie
-          },
-          approval_status: true, // Only approved movies for recommendations
-        },
-        order: [["release_date", "DESC"]],
-        limit: 5,
-      });
-
-      return res.status(200).json({
-        movie,
-        recommendations,
-      });
+      return res.status(200).json(movie);
     } catch (error) {
       console.error("Error fetching movie details:", error);
       return res.status(500).json({ error: error.message });
     }
   }
+
   // Menambahkan film baru
   static async addMovie(req, res) {
     const {

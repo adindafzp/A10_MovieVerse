@@ -73,15 +73,8 @@ const CMSmoviesValidate = () => {
       const response = await axios.get(`${URL}/admin/movie/${record.id}`);
       const movieData = response.data;
 
-<<<<<<< HEAD
       const actorsList = movieData.Actors?.map((actor) => actor.name).join(", ") || "";
       const genresList = movieData.Genres?.map((genre) => genre.name).join(", ") || "";
-=======
-      const actorsList =
-        movieData.Actors?.map((actor) => actor.name).join(", ") || "";
-      const genresList =
-        movieData.Genres?.map((genre) => genre.name).join(", ") || "";
->>>>>>> c2e9f2362e7120a9e5e7871eea2e9840b47bf5e8
 
       const formData = {
         title: movieData.title,
