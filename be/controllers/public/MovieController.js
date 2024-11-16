@@ -174,10 +174,19 @@ class PublicMovieController {
       directorId,
       rating,
     } = req.body;
+  
     const userId = req.userId; // Mendapatkan userId dari middleware
-
+  
+    // Validasi input
+    if (!title || !year || !country || !genres || !directorId) {
+      return res.status(400).json({
+        status: "error",
+        message: "Missing required fields",
+      });
+    }
+  
     try {
-      // Menambahkan film baru dengan data dari req.body
+      // Membuat entri film baru
       const newMovie = await Movie.create({
         title,
         release_date: year,
@@ -185,98 +194,88 @@ class PublicMovieController {
         synopsis,
         poster_url: poster,
         trailer_url: trailer,
-        directorId: directorId,
+        directorId,
         addedBy: userId,
-        approval_status: 0,
+        approval_status: 0, // Pending approval
         rating,
       });
-
-      // Cek apakah movie berhasil dibuat
-      console.log("New Movie:", newMovie);
-
-      // Validasi apakah newMovie memiliki ID
-      if (!newMovie || !newMovie.id) {
-        return res.status(500).json({ message: "Failed to retrieve movie ID" });
-      }
-
-      // Tambahkan genre dan aktor jika ada
+  
       if (genres && genres.length > 0) {
-        console.log("Associating genres:", genres);
-        await newMovie.setGenres(genres);
+        await newMovie.setGenres(genres.slice(0, 10)); // Membatasi jumlah genre
       }
+  
       if (actors && actors.length > 0) {
-        console.log("Associating actors:", actors);
-        await newMovie.setActors(actors);
+        await newMovie.setActors(actors.slice(0, 10)); // Membatasi jumlah aktor
       }
-
-      res.status(201).json({
+  
+      return res.status(201).json({
+        status: "success",
         message: "Movie added successfully and is pending approval",
-        newMovie,
+        movie: newMovie,
       });
     } catch (error) {
       console.error("Error during movie creation:", error);
-      res
-        .status(500)
-        .json({ message: "Failed to add movie", error: error.message });
+      return res.status(500).json({
+        status: "error",
+        message: "Failed to add movie",
+        error: error.message,
+      });
     }
-  }
+  }  
 
   static async searchMovies(req, res) {
     try {
-      const { query, genre, releaseYear, rating, country, sortBy, category } =
-        req.query;
-      console.log("Query Parameters:", req.query);
-
+      const {
+        query,       // Untuk pencarian (judul atau aktor)
+        genre,       // Untuk filter berdasarkan genre
+        releaseYear, // Untuk filter tahun rilis
+        rating,      // Untuk filter berdasarkan rating
+        country,     // Untuk filter berdasarkan negara
+        sortBy,      // Untuk pengurutan hasil
+        category,    // Untuk menentukan apakah mencari film atau aktor
+        limit = 10,  // Limit hasil
+        offset = 0,  // Offset untuk paginasi
+      } = req.query;
+  
       const includeOptions = [];
-
-      // Validasi dan konversi genreId dan countryId
+      const whereClause = { approval_status: true }; // Hanya film yang sudah di-approve
+      const order = [];
+  
+      // Validasi dan Konversi genreId dan countryId
       const genreId = genre && !isNaN(genre) ? parseInt(genre, 10) : null;
-      const countryId =
-        country && !isNaN(country) ? parseInt(country, 10) : null;
-
+      const countryId = country && !isNaN(country) ? parseInt(country, 10) : null;
+  
+      // Validasi genreId dan countryId
       if (genre && genreId === null) {
         return res.status(400).json({ message: "Invalid genre ID" });
       }
-
       if (country && countryId === null) {
         return res.status(400).json({ message: "Invalid country ID" });
       }
-
-      const whereClause = {
-        approval_status: true, // Hanya mengambil film yang disetujui
-      };
-      const order = [];
-
-      // Filter berdasarkan query untuk movies
-      if (category === "movies") {
-        if (query) {
-          whereClause.title = { [Op.like]: `%${query}%` };
-        }
+  
+      // Filter berdasarkan Judul Film (Search)
+      if (query && category === "movies") {
+        whereClause.title = { [Op.like]: `%${query}%` };
       }
-
-      // Filter berdasarkan query untuk celebs/actors
-      if (category === "celebs") {
-        if (query) {
-          includeOptions.push({
-            model: Actor,
-            as: "Actors",
-            where: { name: { [Op.like]: `%${query}%` } },
-            required: true,
-          });
-        }
+  
+      // Search by Actor (Spesifik untuk Aktor)
+      if (category === "celebs" && query) {
+        includeOptions.push({
+          model: Actor,
+          as: "Actors",
+          where: { name: { [Op.like]: `%${query}%` } },
+          required: true, // Hanya tampilkan film dengan aktor yang cocok
+        });
+      } else {
+        // Filter Aktor (Tampilkan semua aktor tanpa pencarian)
+        includeOptions.push({
+          model: Actor,
+          as: "Actors",
+          required: false,
+        });
       }
-
-      if (releaseYear) {
-        whereClause.release_date = {
-          [Op.between]: [`${releaseYear}-01-01`, `${releaseYear}-12-31`],
-        };
-      }
-
-      if (rating) {
-        whereClause.rating = { [Op.gte]: parseFloat(rating) };
-      }
-
-      // Filter genre berdasarkan genreId
+  
+      // Filter Genre
       if (genreId !== null) {
         includeOptions.push({
           model: Genre,
@@ -285,39 +284,32 @@ class PublicMovieController {
           required: true,
         });
       } else {
-        includeOptions.push({
-          model: Genre,
-          as: "Genres",
-          required: false,
-        });
+        includeOptions.push({ model: Genre, as: "Genres", required: false });
       }
-
-      // Filter country berdasarkan countryId
+  
+      // Filter Country
       if (countryId) {
         includeOptions.push({
           model: Country,
           as: "Country",
-          where: { countryId: countryId },
+          where: { countryId },
           required: true,
         });
-      } else {
-        includeOptions.push({
-          model: Country,
-          as: "Country",
-          required: false,
-        });
       }
-
-      // Include actors for general movies search
-      if (category === "movies" || !category) {
-        includeOptions.push({
-          model: Actor,
-          as: "Actors",
-          required: false,
-        });
+  
+      // Filter Tahun Rilis
+      if (releaseYear) {
+        whereClause.release_date = {
+          [Op.between]: [`${releaseYear}-01-01`, `${releaseYear}-12-31`],
+        };
       }
-
-      // Sorting berdasarkan sortBy
+  
+      // Filter Rating
+      if (rating) {
+        whereClause.rating = { [Op.gte]: parseFloat(rating) };
+      }
+  
+      // Sorting
       switch (sortBy) {
         case "newest":
           order.push(["release_date", "DESC"]);
@@ -328,31 +320,27 @@ class PublicMovieController {
         case "rating":
           order.push(["rating", "DESC"]);
           break;
-        case "title_asc":
-          order.push(["title", "ASC"]);
-          break;
-        case "title_desc":
-          order.push(["title", "DESC"]);
-          break;
         default:
           order.push(["release_date", "DESC"]);
       }
-
+  
+      // Query Database
       const movies = await Movie.findAndCountAll({
         where: whereClause,
         include: includeOptions,
         order: order,
         distinct: true,
-        limit: 100,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
       });
-
+  
       if (!movies.rows || movies.rows.length === 0) {
         return res.status(404).json({
           status: "error",
           message: "No movies found",
         });
       }
-
+  
       return res.status(200).json({
         status: "success",
         count: movies.count,
@@ -366,7 +354,7 @@ class PublicMovieController {
         error: error.message,
       });
     }
-  }
+  }  
 }
 
 module.exports = PublicMovieController;

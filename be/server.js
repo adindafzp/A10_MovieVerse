@@ -7,7 +7,11 @@ const cors = require("cors");
 const session = require("express-session");
 const passport = require("./library/passportConfig");
 const dotenv = require("dotenv");
+
 dotenv.config();
+
+console.log("Environment:", process.env.NODE_ENV); // Debugging
+console.log("Frontend URL:", process.env.FRONTEND_URL); // Debugging
 
 // Import Routes
 const userRoutes = require("./routes/userRoutes");
@@ -29,19 +33,19 @@ const genreRoutesPublic = require("./routes/public/genreRoutes");
 const countryRoutesPublic = require("./routes/public/countryRoutes");
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // CORS Configuration
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-app.options('*', cors()); // Handle preflight requests for all routes
+app.options('*', cors()); // Handle preflight requests
 
 // Test Database Connection and Sync Models
 sequelize
@@ -67,9 +71,15 @@ app.use(
     secret: process.env.JWT_SECRET,
     resave: false,
     saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Cookie hanya dikirim melalui HTTPS di produksi
+      maxAge: 24 * 60 * 60 * 1000, // 1 hari
+    },
   })
 );
 
+// Passport Initialization
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -101,7 +111,10 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
   console.error("Error Details:", err.message);
   console.error("Stack Trace:", err.stack);
-  res.status(500).json({ message: "Something went wrong!", error: err.message });
+  res.status(err.status || 500).json({
+    message: err.message || "Internal Server Error",
+    stack: process.env.NODE_ENV === "development" ? err.stack : {}, // Hide stack trace in production
+  });
 });
 
 // Start the server

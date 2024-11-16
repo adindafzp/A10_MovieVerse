@@ -1,4 +1,14 @@
 /* Synopsis container */
+.navbar {
+  position: sticky; /* Jika navbar menggunakan posisi tetap */
+  top: 0;
+  z-index: 10; /* Pastikan navbar berada di atas elemen lain */
+}
+
+.content-wrapper {
+  padding-top: 70px; /* Atur sesuai tinggi navbar */
+}
+
 .synopsis-container {
   max-height: 150px; /* Batasi tinggi container */
   overflow: hidden; /* Jika terlalu panjang, sembunyikan */

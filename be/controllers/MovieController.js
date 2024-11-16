@@ -4,116 +4,96 @@ class MovieController {
   // Create a new movie
   static async create(req, res) {
     try {
-      console.log("Data received in create movie:", req.body);
+      const {
+        title, directorId, countryId, synopsis, genres, actors, trailer_urls, approval_status, rating
+      } = req.body;
 
-      // Tambahkan approval_status secara eksplisit
+      // Validasi input
+      if (!title || !directorId || !countryId) {
+        return res.status(400).json({
+          status: "error",
+          message: "Title, Director, and Country are required fields",
+        });
+      }
+
       const movieData = {
-        ...req.body,
-        approval_status: 1, // Langsung diset menjadi approved
+        title,
+        directorId,
+        countryId,
+        synopsis,
+        approval_status: approval_status ?? 1, // Default to approved
+        rating,
       };
 
-      // Membuat film dengan data yang sudah disiapkan
+      // Membuat film
       const movie = await Movie.create(movieData);
 
-      // If `actors` is provided, associate actors with the movie
-      if (req.body.actors && req.body.actors.length > 0) {
-        await movie.setActors(req.body.actors); // Assuming `actors` is an array of actor IDs
+      // Set relasi (actors, genres)
+      if (actors && actors.length > 0) {
+        await movie.setActors(actors.slice(0, 10)); // Batasi ke 10 aktor
       }
-
-      // If `genres` is provided, associate genres with the movie
-      if (req.body.genres && req.body.genres.length > 0) {
-        await movie.setGenres(req.body.genres); // Assuming `genres` is an array of genre IDs
+      if (genres && genres.length > 0) {
+        await movie.setGenres(genres.slice(0, 10)); // Batasi ke 10 genre
       }
-
-      // If `trailer_urls` is provided, create entries in the MovieVideo table
-      if (req.body.trailer_urls && Array.isArray(req.body.trailer_urls) && req.body.trailer_urls.length > 0) {
-        const videoEntries = req.body.trailer_urls.map((url, index) => ({
+      // Tambahkan video trailer jika ada
+      if (trailer_urls && trailer_urls.length > 0) {
+        const videos = trailer_urls.map((url, index) => ({
           url,
-          title: `Trailer ${index + 1}`, // Bisa diganti sesuai kebutuhan
+          title: `Trailer ${index + 1}`,
           movieId: movie.id,
         }));
-
-        // Insert semua trailers ke MovieVideo
-        await MovieVideo.bulkCreate(videoEntries);
+        await MovieVideo.bulkCreate(videos);
       }
 
-      // Retrieve the complete movie with relations to return
+      // Ambil data lengkap untuk respons
       const createdMovie = await Movie.findByPk(movie.id, {
         include: [
-          {
-            model: Director,
-            as: "Director",
-            attributes: ["id", "name"],
-          },
-          {
-            model: Country,
-            as: "Country",
-            attributes: ["countryId", "name"],
-          },
-          {
-            model: Actor,
-            as: "Actors",
-            through: { attributes: [] },
-            attributes: ["id", "name"],
-          },
-          {
-            model: Genre,
-            as: "Genres",
-            through: { attributes: [] },
-            attributes: ["id", "name"],
-          },
-          {
-            model: MovieVideo,
-            as: "MovieVideos",
-            attributes: ["id", "url", "title"],
-          },
+          { model: Director, as: "Director", attributes: ["id", "name"] },
+          { model: Country, as: "Country", attributes: ["countryId", "name"] },
+          { model: Actor, as: "Actors", through: { attributes: [] }, attributes: ["id", "name"] },
+          { model: Genre, as: "Genres", through: { attributes: [] }, attributes: ["id", "name"] },
+          { model: MovieVideo, as: "MovieVideos", attributes: ["id", "url", "title"] },
         ],
       });
 
       return res.status(201).json({
+        status: "success",
         message: "Movie created successfully",
-        movie: createdMovie,
+        data: createdMovie,
       });
     } catch (error) {
       console.error("Error in create movie:", error);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({
+        status: "error",
+        message: "Failed to create movie",
+        error: error.message,
+      });
     }
   }
 
-  // Get all movies
+  // Get all movies (with pagination)
   static async getAll(req, res) {
     try {
-      const movies = await Movie.findAll({
+      const { limit = 10, offset = 0 } = req.query;
+      const movies = await Movie.findAndCountAll({
         include: [
-          {
-            model: Director,
-            as: "Director",
-            attributes: ["id", "name"],
-          },
-          {
-            model: Country,
-            as: "Country",
-            attributes: ["countryId", "name"],
-          },
-          {
-            model: Actor,
-            as: "Actors",
-            through: { attributes: [] },
-            attributes: ["id", "name"],
-          },
-          {
-            model: Genre,
-            as: "Genres",
-            through: { attributes: [] },
-            attributes: ["id", "name"],
-          },
+          { model: Director, as: "Director", attributes: ["id", "name"] },
+          { model: Country, as: "Country", attributes: ["countryId", "name"] },
+          { model: Actor, as: "Actors", through: { attributes: [] }, attributes: ["id", "name"] },
+          { model: Genre, as: "Genres", through: { attributes: [] }, attributes: ["id", "name"] },
         ],
+        limit: parseInt(limit),
+        offset: parseInt(offset),
       });
 
-      return res.status(200).json(movies);
+      return res.status(200).json({
+        status: "success",
+        count: movies.count,
+        data: movies.rows,
+      });
     } catch (error) {
       console.error("Error in fetching movies:", error);
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ status: "error", message: "Failed to fetch movies", error: error.message });
     }
   }
 
